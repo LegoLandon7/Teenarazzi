@@ -10,7 +10,7 @@ client = discord.Client(intents=intents)
 
 server = client.get_guild("")
 
-def fetch_discord_data()
+def fetch_discord_data():
     data = [server.member_count, server.approximate_presence_count]
     return data
 
