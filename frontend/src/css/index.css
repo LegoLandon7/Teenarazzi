@@ -1,0 +1,28 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --background-color-main: rgb(18, 38, 26);
+  --background-color-secondary: rgb(12, 26, 18);
+
+  --navbar-background-color-main: rgb(24, 52, 36);
+  --navbar-background-color-secondary: rgb(15, 42, 28);
+
+  --navbar-title-font-color: rgb(91, 183, 106);
+  --navbar-link-font-color: rgb(200, 200, 200);
+
+  --navbar-link-active-color: rgb(0, 88, 18);
+  --navbar-link-hover-color: rgb(0, 50, 0);
+
+  --navbar-height: 55px;
+  --navbar-link-gap: 20px;
+
+  --navbar-title-font-size: 30px;
+  --navbar-link-font-size: 20px;
+
+  --basic-background-color-main: rgba(255, 255, 255, 0.1);
+  --basic-background-color-secondary: rgba(255, 255, 255, 0.05);
+
+  --basic-font-color: rgb(230, 230, 230);
+}

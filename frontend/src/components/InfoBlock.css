@@ -1,0 +1,36 @@
+.info-block {
+    width: 100%;
+    padding: 12px 24px;
+
+    background-image: linear-gradient(
+        125deg, 
+        var(--basic-background-color-main),
+        var(--basic-background-color-secondary)
+    );
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    img {
+        width: 200px;
+        height: 200px;
+    }
+
+    .info-body {
+        display: flex;
+        flex-direction: column;
+
+        h1 {
+            color: var(--basic-font-color);
+            text-align: center;
+        }
+
+        p {
+            color: var(--basic-font-color);
+            text-align: start;
+        }
+    }
+}
