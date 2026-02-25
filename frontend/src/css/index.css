@@ -25,4 +25,9 @@
   --basic-background-color-secondary: rgba(255, 255, 255, 0.05);
 
   --basic-font-color: rgb(230, 230, 230);
+
+  --border-color-main: rgb(90, 180, 100);
+
+  --header-font-size: clamp(24px, 5vw, 64px);
+  --paragraph-font-size: clamp(6px, 1.5vw, 20px)
 }

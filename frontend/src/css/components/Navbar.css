@@ -17,6 +17,8 @@
     justify-content: space-between;
     align-items: center;
 
+    border-bottom: 2px solid var(--border-color-main);
+
     .site-title {
         color: var(--navbar-title-font-color);
         text-decoration: none;

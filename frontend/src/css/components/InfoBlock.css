@@ -1,6 +1,7 @@
 .info-block {
-    width: 100%;
+    max-width: 80%;
     padding: 12px 24px;
+    margin: 6px 12px;
 
     background-image: linear-gradient(
         125deg, 
@@ -11,26 +12,42 @@
     border-radius: 12px;
 
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
+    
+    gap: 10px;
 
     img {
-        width: 200px;
-        height: 200px;
+        aspect-ratio: 1 / 1;
+        width: 30%;
+        height: auto;
     }
 
     .info-body {
         display: flex;
         flex-direction: column;
+        justify-content: center;
 
         h1 {
+            margin: 2px;
+
             color: var(--basic-font-color);
             text-align: center;
+            font-size: var(--header-font-size);
         }
 
         p {
+            margin: 2px;
+
             color: var(--basic-font-color);
             text-align: start;
+            font-size: var(--paragraph-font-size);
         }
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .info-block {
+        flex-direction: column;
     }
 }

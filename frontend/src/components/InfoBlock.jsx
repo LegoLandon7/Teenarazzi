@@ -1,4 +1,4 @@
-import './InfoBlock.css'
+import '../css/components/InfoBlock.css'
 import '../css/index.css'
 import mainIcon from '../assets/output_6396.jpg'
 
