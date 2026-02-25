@@ -1,0 +1,9 @@
+.main-divider {
+    left: 0vw;
+    width: 100vw;
+    height: 6px;
+    margin: 24px 0;
+
+    border-color: var(--main-color);
+    background-color: var(--background-color-main);
+}
