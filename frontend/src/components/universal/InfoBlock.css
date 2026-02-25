@@ -1,5 +1,5 @@
 .info-block {
-    max-width: 80%;
+    max-width: 100%;
     padding: 12px 24px;
     margin: 6px 12px;
 
@@ -19,7 +19,7 @@
 
     img {
         aspect-ratio: 1 / 1;
-        width: 30%;
+        width: 25%;
         height: auto;
     }
 
@@ -70,6 +70,10 @@
             h1, p {
                 text-align: center;
             }
+        }
+
+        .img {
+            width: 60%;
         }
     }
 }
