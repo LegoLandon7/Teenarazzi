@@ -1,3 +1,2 @@
 *.py linguist-detectable=true
 *.jsx linguist-detectable=true
-*.jsx linguist-language=React
