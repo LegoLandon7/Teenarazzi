@@ -13,7 +13,12 @@ function About() {
 
     return (
         <>
-            <InfoBlock img={teenarazziIcon} header="About us - Teenarazzi" paragraph={description}/>
+            <div className="main-content">
+                <div className='flex-container-column'>
+                    <InfoBlock img={teenarazziIcon} header="About us - Teenarazzi" paragraph={description}/>
+                </div>
+            </div>
+
             <hr className="main-divider" />
         </>
     );

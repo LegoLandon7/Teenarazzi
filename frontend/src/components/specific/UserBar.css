@@ -1,16 +1,14 @@
 .userbar {
     width: var(--userbar-width);
-    height: 100vh;
-    top: 0%;
-    left: 0%;
+    height: calc(100vh - var(--navbar-height));
+    top: var(--navbar-height);
+    left: 0;
 
     overflow-y: scroll;
 
     position: fixed;
 
     z-index: 999;
-
-    margin-top: var(--navbar-height);
 
     background-image: linear-gradient(
         45deg,
@@ -19,41 +17,28 @@
     );
 
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
 
     border-right: 2px solid var(--border-color-main);
-
-    .site-title {
-        color: var(--navbar-title-font-color);
-        text-decoration: none;
-
-        font-size: var(--navbar-title-font-size);
-        font-weight: bold;
-    }
 
     .user-links {
         display: flex;
         flex-direction: column;
 
-        align-items: center;
-        justify-content: center;
-
-        height: 25vh;
         width: 100%;
 
         a {
             width: 100%;
+            height: clamp(50px, 15vw, 100px);
             color: var(--navbar-link-font-color);
             text-decoration: none;
 
-            font-size: var(--navbar-link-font-size);
+            font-size: var(--small-header-font-size);
 
             display: flex;
             align-items: center;
             justify-content: center;
-            
-            height: 100%;
 
             padding: 0 var(--navbar-link-gap);
 
@@ -66,5 +51,4 @@
             }
         }
     }
-
 }

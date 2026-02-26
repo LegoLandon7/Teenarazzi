@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://legolandon7.github.io/Teenarazzi",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
