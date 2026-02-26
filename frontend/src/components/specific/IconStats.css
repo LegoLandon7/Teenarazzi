@@ -5,7 +5,7 @@
     width: 100%;
     
     min-height: 15vw;
-    gap: 1vw; 
+    gap: var(--main-gap-size); 
 
     .icon-stat {
         min-width: 40vw;

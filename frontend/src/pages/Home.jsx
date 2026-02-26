@@ -13,7 +13,7 @@ function Home() {
         <>
             <div className="main-content">
                 <div className='flex-container-column'>
-                    <InfoBlock img={teenarazziIcon} header="Teenarazzi" paragraph={"Teenarazzi is a laid-back community for teenagers. Originally starting out on Reddit as a small group chat, it grew into what it is today! We always welcome new members and we hope you will check us out!"} component={() => <PageButton header="About Us" to="/about" />} />
+                    <InfoBlock img={teenarazziIcon} header="Teenarazzi" paragraph={"Teenarazzi is a laid-back community for teenagers. Originally starting out on Reddit as a small group chat, it grew into what it is today! We always welcome new members and we hope you will check us out!"} component={() => <PageButton header="Click here to learn more" to="/about" />} />
                     <InfoBlock img={null} header="Come check us out!" component={IconStats} />
                 </div>
             </div>

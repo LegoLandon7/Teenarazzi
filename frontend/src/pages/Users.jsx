@@ -1,7 +1,11 @@
+import { Outlet } from "react-router-dom";
+import UserBar from '../components/specific/UserBar.jsx'
+
 function Users() {
   return (
     <>
-      Hello World
+      <UserBar />
+      <Outlet />
     </>
   )
 }

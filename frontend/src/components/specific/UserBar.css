@@ -1,11 +1,16 @@
-.navbar {
-    width: 100%;
-    height: var(--navbar-height);
+.userbar {
+    width: var(--userbar-width);
+    height: 100vh;
     top: 0%;
     left: 0%;
 
+    overflow-y: scroll;
+
     position: fixed;
-    z-index: 1000;
+
+    z-index: 999;
+
+    margin-top: var(--navbar-height);
 
     background-image: linear-gradient(
         45deg,
@@ -15,9 +20,9 @@
 
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
 
-    border-bottom: 2px solid var(--border-color-main);
+    border-right: 2px solid var(--border-color-main);
 
     .site-title {
         color: var(--navbar-title-font-color);
@@ -27,13 +32,18 @@
         font-weight: bold;
     }
 
-    .nav-links {
+    .user-links {
         display: flex;
+        flex-direction: column;
 
         align-items: center;
-        height: 100%;
+        justify-content: center;
+
+        height: 25vh;
+        width: 100%;
 
         a {
+            width: 100%;
             color: var(--navbar-link-font-color);
             text-decoration: none;
 
@@ -41,6 +51,8 @@
 
             display: flex;
             align-items: center;
+            justify-content: center;
+            
             height: 100%;
 
             padding: 0 var(--navbar-link-gap);

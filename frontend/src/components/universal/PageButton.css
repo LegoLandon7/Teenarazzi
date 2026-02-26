@@ -10,6 +10,7 @@
     text-decoration: none;
 
     padding: 4px 24px;
+    margin: 2px 8px;
 
     h1 {
         font-size: var(--small-header-font-size);

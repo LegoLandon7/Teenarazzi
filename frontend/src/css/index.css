@@ -18,11 +18,13 @@
 
   --main-color: rgb(0, 200, 40);
 
-  --navbar-height: 55px;
-  --navbar-link-gap: 20px;
+  --navbar-height: clamp(40px, 5vh, 120px);
+  --navbar-link-gap: clamp(6px, 1.5vw, 30px);
 
-  --navbar-title-font-size: 30px;
-  --navbar-link-font-size: 20px;
+  --userbar-width: 25vw;
+
+  --navbar-title-font-size: clamp(36px, 3.5vw, 128px);
+  --navbar-link-font-size: clamp(12px, 1.5vw, 64px);
 
   --basic-background-color-main: rgba(255, 255, 255, 0.1);
   --basic-background-color-secondary: rgba(255, 255, 255, 0.05);
@@ -31,7 +33,9 @@
 
   --border-color-main: rgb(90, 180, 100);
 
-  --header-font-size: clamp(24px, 5vw, 64px);
-  --small-header-font-size: clamp(12px, 3vw, 48px);
-  --paragraph-font-size: clamp(12px, 2vw, 32px)
+  --header-font-size: clamp(24px, 5vw, 128px);
+  --small-header-font-size: clamp(12px, 3vw, 96px);
+  --paragraph-font-size: clamp(12px, 2vw, 64px);
+
+  --main-gap-size: clamp(6px, 1.5vw, 30px);
 }
