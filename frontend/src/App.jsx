@@ -2,33 +2,26 @@ import { Routes, Route } from "react-router-dom"
 
 import './css/App.css'
 import './css/index.css'
-import './css/tools/flex-container.css'
-import './css/tools/dividers.css'
 
-import Navbar from './components/universal/Navbar.jsx'
-import InfoBlock from './components/universal/InfoBlock.jsx'
-import IconStats from './components/specific/IconStats.jsx'
+import Navbar from './components/specific/Navbar.jsx'
 
-import teenarazziIcon from './assets/main-icon.png'
+import Home from './pages/Home.jsx'
+import About from './pages/About.jsx'
+import Users from './pages/Users.jsx'
+
+import ScrollToTop from "./components/tools/ScrollToTop.jsx"
 
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Navbar />
 
       <Routes>
-        <Route path="/" />
-        <Route path="/about" />
+        <Route path="/" element={<Home />}/>
+        <Route path="/about" element={<About />}/>
+        <Route path="/users" element={<Users />}/>
       </Routes>
-
-      <div className="main-content">
-        <div className='flex-container-column'>
-            <InfoBlock img={teenarazziIcon} header="Teenarazzi" paragraph={"Teenarazzi is a laid-back community for teenagers. Originally starting out on Reddit as a small group chat, it grew into what it is today! That being (yap away here some other time)\nWe always welcome new members and we hope you will check us out!"}/>
-            <InfoBlock img={null} header="Come check us out!" component={IconStats} />
-        </div>
-      </div>
-
-      <hr className="main-divider" />
     </>
   )
 }

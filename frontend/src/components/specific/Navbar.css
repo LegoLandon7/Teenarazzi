@@ -50,7 +50,7 @@
                 background-color: var(--navbar-link-active-color);
             }
 
-            &:hover {
+            &:hover:not(.active) {
                 background-color: var(--navbar-link-hover-color);
             }
         }

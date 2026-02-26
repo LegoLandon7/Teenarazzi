@@ -1,0 +1,26 @@
+.page-button {
+    max-width: 90%;
+    max-height: 30%;
+
+    background-color: var(--background-color-main);
+
+    border: 2px solid var(--background-color-secondary);
+    border-radius: 20px;
+
+    text-decoration: none;
+
+    padding: 4px 24px;
+
+    h1 {
+        font-size: var(--small-header-font-size);
+        color: var(--basic-font-color);
+        text-decoration: none;
+    }
+
+    transition: transform 0.3s ease, filter 0.5s ease;
+
+    &:hover {
+        transform: scale(1.03);
+        filter: brightness(1.5);
+    }
+}

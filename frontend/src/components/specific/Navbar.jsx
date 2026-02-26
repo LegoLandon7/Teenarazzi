@@ -1,6 +1,5 @@
 import { NavLink } from "react-router-dom"
 import './Navbar.css'
-import '../../css/index.css'
 
 function Navbar() {
     return (
@@ -10,6 +9,7 @@ function Navbar() {
             <div className="nav-links">
                 <NavLink to="/">Home</NavLink>
                 <NavLink to="/about">About</NavLink>
+                <NavLink to="/users">Users</NavLink>
             </div>
         </nav>
     )

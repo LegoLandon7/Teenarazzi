@@ -29,7 +29,7 @@
         justify-content: center;
         align-items: center;
 
-        h1 {
+        h1:not(.page-button h1) {
             margin: 2px;
 
             color: var(--basic-font-color);
@@ -67,7 +67,7 @@
         .info-body {
             align-items: center;
 
-            h1, p {
+            h1:not(.page-button h1), p {
                 text-align: center;
             }
         }

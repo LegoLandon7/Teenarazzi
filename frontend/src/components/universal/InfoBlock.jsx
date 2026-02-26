@@ -1,5 +1,4 @@
 import './InfoBlock.css'
-import '../../css/index.css'
 
 function InfoBlock({img = null, header = "", paragraph = "", component: Component = null }) {
     return (

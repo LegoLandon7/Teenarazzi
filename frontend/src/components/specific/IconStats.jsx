@@ -1,5 +1,4 @@
 import './IconStats.css'
-import '../../css/index.css'
 
 function IconStats() {
     let discordTotal = '[ERROR]';
