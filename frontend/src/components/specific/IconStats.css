@@ -52,6 +52,14 @@
             overflow-wrap: break-word; 
             word-wrap: break-word;
         }
+
+        .last-updated {
+            padding-top: var(--main-gap-size);
+            font-size: var(--note-font-size);
+            color: var(--basic-font-color);
+            font-weight: none;
+            text-decoration: none;
+        }
     }
 }
 

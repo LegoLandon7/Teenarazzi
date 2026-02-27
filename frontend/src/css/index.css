@@ -52,6 +52,7 @@
   --header-font-size: clamp(24px, 5vw, 128px);
   --small-header-font-size: clamp(12px, 2.5vw, 64px);
   --paragraph-font-size: clamp(12px, 2vw, 64px);
+  --note-font-size: clamp(6px, 1vw, 32px);
 
   --main-gap-size: clamp(6px, 1.5vw, 30px);
 
