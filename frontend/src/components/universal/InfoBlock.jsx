@@ -1,6 +1,6 @@
 import './InfoBlock.css'
 
-function InfoBlock({img = null, header = "", paragraph = "", component: Component = null }) {
+function InfoBlock({img = null, header = "", paragraph = "", background = false, component: Component = null }) {
     return (
         <div className="info-block"> 
             {img && <img src={img} />}

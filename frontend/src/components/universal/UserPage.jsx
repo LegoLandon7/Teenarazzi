@@ -1,7 +1,10 @@
 import { useParams } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useReducer } from "react"
+
+import InfoBlock from './InfoBlock.jsx'
 
 import './UserPage.css'
+import '../../css/tools/flex-container.css'
 
 function UserPage() {
     const { userId } = useParams()
@@ -9,26 +12,50 @@ function UserPage() {
 
     // fetch users data
     useEffect(() => {
-        fetch("https://your-worker.workers.dev/api/discord")
+        fetch("/users.json")
             .then(res => res.json())
-            .then(data => setUser(data))
+            .then(data => setUser(data[userId]))
     }, [userId])
 
-    if(!user) return <h1 className='loading'>Loading ↻</h1>
+    const info = !user ? "Loading…" : (
+        <p className="user-info">
+            {[
+            user.nicknames?.length && `Nicknames: ${user.nicknames.join(", ")}`,
 
-    //user.username
-    //user.nickname
-    //user.avatarURL
-    //user.pronouns
-    //user.gender
-    //user.sexuality
-    //user.description
-    //user.ect...
+            user.usernames?.discord && (
+                `\nDiscord:\n    Current username: ${user.usernames.discord.at(-1)}`
+                + (user.usernames.discord.length > 1 ? `\n    Old username(s): ${user.usernames.discord.slice(0,-1).join(", ")}` : "")
+            ),
 
+            user.links?.discord && (
+                <>{`\n    Link: `}<a href={user.links.discord} target="_blank" rel="noopener noreferrer">discord</a></>
+            ),
+
+            user.usernames?.reddit && (
+                `\nReddit:\n    Current username: ${user.usernames.reddit.at(-1)}`
+                + (user.usernames.reddit.length > 1 ? `\n    Old username(s): ${user.usernames.reddit.slice(0,-1).join(", ")}` : "")
+            ),
+
+            user.links?.reddit && (
+                <>{`\n    Link: `}<a href={user.links.reddit} target="_blank" rel="noopener noreferrer">reddit</a></>
+            ),
+
+            user.pronouns && `\nPronouns: ${user.pronouns}`,
+            user.gender && `\nGender: ${user.gender}`,
+            user.sexuality && `\nSexuality: ${user.sexuality}`,
+            user.age?.value && `\nAge: ${user.age.value}`,
+            user.birthday && `\nBirthday: ${user.birthday}`,
+            ].filter(Boolean)}
+        </p>
+        );
+
+    if(!user) return <div className='test'>Loading ↻</div>
     return (
-        <>
-            
-        </>
+        <div className="user-page">
+            <InfoBlock img={user.avatarUrl} header={user.id} paragraph={user.description} />
+            <InfoBlock header="Information" paragraph={info} />
+        
+        </div>
     );
 }
 

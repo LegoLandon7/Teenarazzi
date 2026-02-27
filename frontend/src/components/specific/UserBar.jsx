@@ -6,40 +6,7 @@ function UserBar() {
         <nav className="userbar"> 
 
             <div className="user-links">
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                <NavLink to="user1">themidpoint</NavLink>
-                <NavLink to="user2">legomaster_01</NavLink>
-                
-                
+                <NavLink to="legomaster_01">legomaster_01</NavLink>
             </div>
         </nav>
     )

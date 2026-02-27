@@ -6,10 +6,7 @@ import InfoBlock from '../components/universal/InfoBlock.jsx'
 import teenarazziIcon from '../assets/main-icon.png'
 
 function About() {
-    let description = `Teenarazzi is a vast community with thousands of ssmembers thats main focus is for socializing with teens!` +
-    ` Teenarazzi is ran by teens and focused for teens specifically. What started out as a small reddit group chat turned it into what it is today!` +
-    ` Everyone knows everyone in this small but vast community so it's hard to feel left out.`+
-    ` We are a small silly community who would love to have any new members! we are very unserious and fun and hope you consider checking us out!`;
+    let description = `Teenarazzi is a vast, diverse community with the main focus of being an online, social hub for teens! Our community is run by teens, for teens. What started out as a small Reddit group chat turned into a rapidly growing, yet tight knit community across multiple platforms. Everyone knows everyone in this small but growing community, so it's hard to feel left out. We are a small silly bunch who would warmly welcome any new members! We are known to be very unserious and fun, so we hope you consider visiting us sometime!`;
 
     return (
         <>

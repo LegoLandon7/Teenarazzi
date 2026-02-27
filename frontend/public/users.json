@@ -1,6 +1,7 @@
 {
     "legomaster_01": {
-        "avatarUrl": "link",
+        "id": "legomaster_01",
+        "avatarUrl": "https://cdn.discordapp.com/avatars/623964733799923733/d15a88574598af1f9acfc128f8bb0aeb.png?size=4096",
         "notes": "super cool dude",
         "usernames": {
             "discord": [
@@ -14,8 +15,8 @@
             "lego", "TheLegoGuy"
         ],
         "links": {
-            "reddit": "link",
-            "discord": "link"
+            "reddit": "https://reddit.com/u/legomaster_01",
+            "discord": "https://discord/com/users/623964733799923733"
         },
         "description": "The creator of teenarazzi.com\n\nEnjoys legos very much and is always kind to others :) also likie coding :3",
         "pronouns": "he/him",

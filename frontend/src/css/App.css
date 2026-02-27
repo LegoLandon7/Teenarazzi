@@ -1,6 +1,6 @@
 html, body {
   width: 100vw;
-  height: 1000vh;
+  height: auto;
 
   margin: 0;
   padding-top: var(--navbar-height);
