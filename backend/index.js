@@ -22,11 +22,11 @@ export default {
 
 async function fetchStats(env) {
   const [discord, reddit] = await Promise.all([
-    fetch("https://discord.com/api/v10/invites/YOURCODE?with_counts=true", {
+    fetch("https://discord.com/api/v10/invites/razzi?with_counts=true", {
       headers: { Authorization: `Bot ${env.BOT_TOKEN}` }
     }).then(r => r.json()),
 
-    fetch("https://www.reddit.com/r/YOURSUBREDDIT/about.json", {
+    fetch("https://www.reddit.com/r/teenarazzi/about.json", {
       headers: { "User-Agent": "teenarazzi/1.0" }
     }).then(r => r.json())
   ])
