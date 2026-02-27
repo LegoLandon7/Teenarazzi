@@ -8,6 +8,8 @@ function IconStats() {
     const [redditTotal, setRedditTotal] = useState('[ERROR]')
     const [redditActive, setRedditActive] = useState('[ERROR]')
     const [lastUpdated, setLastUpdated] = useState(null)
+    const CACHE_KEY = 'teenarazzi_stats'
+    const CACHE_TTL = 5 * 60 * 1000
 
     const fetchStats = async () => {
         try {
@@ -19,13 +21,38 @@ function IconStats() {
             setRedditTotal(data.reddit.members ?? '[ERROR]')
             setRedditActive(data.reddit.online ?? '[ERROR]')
             setLastUpdated(data.timestamp ?? null)
+
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                data,
+                fetchedAt: Date.now()
+            }))
         } catch (err) {
             console.error('Failed to fetch stats:', err)
         }
     }
 
     useEffect(() => {
+        // Try loading cached stats from localStorage
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached) {
+            const { data, fetchedAt } = JSON.parse(cached)
+            const age = Date.now() - fetchedAt
+
+            if (age < CACHE_TTL) {
+                // Use cached data if still valid
+                setDiscordTotal(data.discord.members ?? '[ERROR]')
+                setDiscordActive(data.discord.online ?? '[ERROR]')
+                setRedditTotal(data.reddit.members ?? '[ERROR]')
+                setRedditActive(data.reddit.online ?? '[ERROR]')
+                setLastUpdated(data.timestamp ?? null)
+                return
+            }
+        }
+
+        // Fetch fresh data if no cache or cache expired
         fetchStats()
+
+        // Optional: refresh every 30 mins
         const interval = setInterval(fetchStats, 30 * 60 * 1000)
         return () => clearInterval(interval)
     }, [])
@@ -55,7 +82,7 @@ function IconStats() {
             </h1><p>
                 Total members: <span style={{color: typeof redditTotal === 'number' && !isNaN(redditTotal) ? "green" : "red"}}>{redditTotal}</span> <br />
                 Active members: <span style={{color: typeof redditActive === 'number' && !isNaN(redditActive) ? "green" : "red"}}>{redditActive}</span> <br />
-            </p><div className="last-updated">{"Last Updated: " + formatTimestamp(lastUpdated)}</div></a>
+            </p><div className="last-updated">{lastUpdated ? "Last Updated: " + formatTimestamp(lastUpdated) : "Last Updated: N/A"}</div></a>
         </div>
     )
 }
