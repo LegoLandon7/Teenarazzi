@@ -52,8 +52,8 @@ function IconStats() {
         // Fetch fresh data if no cache or cache expired
         fetchStats()
 
-        // Optional: refresh every 30 mins
-        const interval = setInterval(fetchStats, 30 * 60 * 1000)
+        // Optional: refresh every 5 mins
+        const interval = setInterval(fetchStats, 5 * 60 * 1000)
         return () => clearInterval(interval)
     }, [])
 
