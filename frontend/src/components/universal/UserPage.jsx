@@ -32,7 +32,8 @@ function UserPage() {
                         ? `\nOld Usernames: ${user.usernames.reddit.slice(1).join(", ")}` : ""}`}
                         {user.links.reddit !== null && <>{"\nLink: "}<a href={user.links.reddit} target="_blank" rel="noreferrer">link</a></>}</>} />)}
                 <InfoBlock width="max" header="Information" paragraph=
-                    {<>{user.pronouns !== null && (`Pronouns: ${user.pronouns}\n`)}
+                    {<>{user.nicknames.at(0) !== null && (`Nicknames: ${user.nicknames.join(', ')}\n`)}
+                    {user.pronouns !== null && (`Pronouns: ${user.pronouns}\n`)}
                     {user.sexuality !== null && (`Sexuality: ${user.sexuality}\n`)}
                     {user.age.value !== null && (<>{`Age: ${user.age.value}`}<small> (Last Updated: {new Date(user.age.timestamp * 1000).toLocaleDateString()})</small>{"\n"}</>)}
                     {user.birthday !== null && (`Birthday: ${user.birthday}`)}</>}/>

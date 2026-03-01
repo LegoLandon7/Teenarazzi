@@ -8,8 +8,6 @@
 
     position: fixed;
 
-    z-index: 999;
-
     background-image: linear-gradient(
         45deg,
         var(--navbar-background-color-main),
@@ -22,7 +20,37 @@
 
     border-right: 2px solid var(--border-color-main);
 
+    z-index: 999;
+
+    a {
+        background-color: var(--navbar-background-color-main);
+        color: var(--navbar-link-font-color);
+        text-align: center;
+
+        text-decoration: none;
+
+        &:hover:not(.active) {
+            background-color: var(--navbar-link-hover-color);
+        }
+    }
+
+    input {
+        background-color: var(--navbar-background-color-main);
+        color: var(--navbar-link-font-color);
+
+        border: 1px solid var(--border-color-main);
+    }
+
+    select {
+        background-color: var(--navbar-background-color-main);
+        color: var(--navbar-link-font-color);
+        text-align: center;
+
+        border: 1px solid var(--border-color-main);
+    }
+
     .user-links {
+        z-index: 998;
         display: flex;
         flex-direction: column;
 

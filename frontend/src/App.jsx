@@ -5,6 +5,7 @@ import './css/index.css'
 
 import Navbar from './components/specific/Navbar.jsx'
 import UserPage from './components/universal/UserPage.jsx'
+import DefaultUserPage from './components/specific/extends/DefaultUserPage.jsx'
 
 import Home from './pages/Home.jsx'
 import About from './pages/About.jsx'
@@ -22,7 +23,7 @@ function App() {
         <Route path="/" element={<Home />}/>
         <Route path="/about" element={<About />}/>
         <Route path="/users" element={<Users />}>
-          <Route index element={<p>Select a user</p>} />
+          <Route index element={<DefaultUserPage />} />
           <Route path=":userId" element={<UserPage />}/>
         </Route>
       </Routes>
