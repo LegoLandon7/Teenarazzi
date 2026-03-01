@@ -49,7 +49,7 @@
 
   --border-color-main: rgb(90, 180, 100);
 
-  --header-font-size: clamp(24px, 5vw, 128px);
+  --header-font-size: clamp(20px, 4.85vw, 128px);
   --small-header-font-size: clamp(12px, 2.5vw, 64px);
   --paragraph-font-size: clamp(10px, 1.85vw, 64px);
   --note-font-size: clamp(6px, 1vw, 32px);
