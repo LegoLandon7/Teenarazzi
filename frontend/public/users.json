@@ -5,10 +5,10 @@
         "notes": "super cool dude",
         "usernames": {
             "discord": [
-                "cc_landonlego", "legomaster_01"
+                "legomaster_01", "cc_landonlego"
             ],
             "reddit": [
-                "u/C-C_LandonLego", "u/legomaster_01"
+                "u/legomaster_01", "u/C-C_LandonLego"
             ]
         },
         "nicknames": [
@@ -31,7 +31,7 @@
     "mracticalpacaron": {
         "id": "mracticalpacaron",
         "avatarUrl": "https://cdn.discordapp.com/avatars/811914380656377887/a_6b5a316de96e04402ffc762e7838d462.gif?size=4096",
-        "notes": "",
+        "notes": null,
         "usernames": {
             "discord": [
                 "mracticalpacaron"
@@ -60,7 +60,7 @@
     "notagod_420": {
         "id": "notagod_420",
         "avatarUrl": "https://cdn.discordapp.com/avatars/728600140947914803/f6a95a49a34b264d7c18b9a663e5e3d5.png?size=4096",
-        "notes": "",
+        "notes": null,
         "usernames": {
             "discord": [
                 "notagod_420"
@@ -89,7 +89,7 @@
     "ejoit": {
         "id": "ejoit",
         "avatarUrl": "https://cdn.discordapp.com/avatars/856191934438965308/3718366b5b2352f8feea728fb9a64042.png?size=4096",
-        "notes": "",
+        "notes": null,
         "usernames": {
             "discord": [
                 "ejoit"
@@ -118,7 +118,7 @@
     "thesillyman": {
         "id": "thesillyman",
         "avatarUrl": "https://cdn.discordapp.com/avatars/1349114950773243924/5b130cf8effdcfc813319d2fb6b53ffb.png?size=4096",
-        "notes": "",
+        "notes": null,
         "usernames": {
             "discord": [
                 "thesillyman"
@@ -147,7 +147,7 @@
     "mars_rover_47704": {
         "id": "mars_rover_47704 ",
         "avatarUrl": "https://cdn.discordapp.com/embed/avatars/1.png",
-        "notes": "",
+        "notes": null,
         "usernames": {
             "discord": [
                 "mars_rover_47704"
@@ -161,7 +161,7 @@
         ],
         "links": {
             "reddit": "https://reddit.com/u/Kindly_Sun671",
-            "discord": "https://discord/com/users/unavailable"
+            "discord": null
         },
         "description": "Mars Rover, though she just goes by Mars, is kind of like a mix of your cool aunt and your weird cousin that you never see. Caring once you get to know her, funny right off the bat. Kind of odd. She can be really intellectual at random moments, sometimes to a fault. Thinks way too much.",
         "pronouns": "she/her",
@@ -176,7 +176,7 @@
     "therealyuyuu": {
         "id": "therealyuyuu",
         "avatarUrl": "https://cdn.discordapp.com/avatars/858820057509789707/37a112d3d4263de0bd5763264ef8385f.png?size=4096",
-        "notes": "",
+        "notes": null,
         "usernames": {
             "discord": [
                 "therealyuyuu"
@@ -263,7 +263,7 @@
     "vivi.the.smiling": {
         "id": "vivi.the.smiling",
         "avatarUrl": "https://cdn.discordapp.com/avatars/1396908085196492940/408d54ca0b541484253896545d3437e5.png?size=4096",
-        "notes": "",
+        "notes": null,
         "usernames": {
             "discord": [
                 "vivi.the.smiling"

@@ -1,3 +1,13 @@
 .user-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
     margin-left: var(--userbar-width);
+
+    width: auto;
+    height: auto;
+
+    padding: var(--main-gap-size) var(--main-gap-size);
 }

@@ -6,7 +6,7 @@ function InfoBlock({img = null, header = "", paragraph = "", background = false,
             {img && <img src={img} />}
             
             <div className="info-body">
-                <h1> {header}</h1><hr /><p> {paragraph} </p>
+                <h1>{header}</h1><hr /><p>{paragraph}</p>
                 {Component && <Component />}
             </div>
         </div>

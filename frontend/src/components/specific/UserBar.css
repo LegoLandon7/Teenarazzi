@@ -34,7 +34,7 @@
             color: var(--navbar-link-font-color);
             text-decoration: none;
 
-            font-size: var(--small-header-font-size);
+            font-size: var(--paragraph-font-size);
 
             display: flex;
             align-items: center;

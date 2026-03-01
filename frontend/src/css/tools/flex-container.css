@@ -10,11 +10,12 @@
 }
 
 .flex-container-wrap {
+    width: 100%;
     display: flex;
     flex-wrap: wrap;
 
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
 
     gap: var(--main-gap-size)
 }
@@ -24,8 +25,8 @@
     flex-wrap: wrap;
     flex-direction: row;
 
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
 
     gap: var(--main-gap-size)
 }
