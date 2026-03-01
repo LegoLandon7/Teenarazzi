@@ -20,7 +20,7 @@ function Navbar() {
 
     return (
         <nav className="navbar" ref={navRef}> 
-            <NavLink to="/" className="site-title" onClick={close}>Teenarazzi.com</NavLink>
+            <NavLink to="/" className="site-title" onClick={close}>teenarazzi.com</NavLink>
 
             <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
                 <span /><span /><span />

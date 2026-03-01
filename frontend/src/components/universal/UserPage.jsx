@@ -23,7 +23,7 @@ function UserPage() {
             <div className="user-page">
                 <InfoBlock img={user.avatarUrl} header={user.id} paragraph={user.description} />
 
-                <div className="flex-container-column-start-top">
+                <div className="flex-container-column-top">
                     <div className="flex-container-row">
                         {user.usernames.discord.at(0) !== null && (<InfoBlock header="Discord" paragraph=
                             {<>{`Username: ${user.usernames.discord.at(0)}${user.usernames.discord.length > 1
