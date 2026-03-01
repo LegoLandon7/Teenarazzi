@@ -17,46 +17,13 @@ function UserPage() {
             .then(data => setUser(data[userId]))
     }, [userId])
 
-    const info = !user ? "Loading…" : (
-        <p className="user-info">
-            {[
-                user.nicknames?.length && `Nicknames: ${user.nicknames.join(", ")}`,
-
-                user.usernames?.discord && (
-                    `\nDiscord:\n    Current username: ${user.usernames.discord.at(-1)}`
-                    + (user.usernames.discord.length > 1 ? `\n    Old username(s): ${user.usernames.discord.slice(0, -1).join(", ")}` : "")
-                ),
-
-                user.links?.discord && (
-                    <>{`\n    Link: `}<a href={user.links.discord} target="_blank" rel="noopener noreferrer">discord</a></>
-                ),
-
-                user.usernames?.reddit && (
-                    `\nReddit:\n    Current username: ${user.usernames.reddit.at(-1)}`
-                    + (user.usernames.reddit.length > 1 ? `\n    Old username(s): ${user.usernames.reddit.slice(0, -1).join(", ")}` : "")
-                ),
-
-                user.links?.reddit && (
-                    <>{`\n    Link: `}<a href={user.links.reddit} target="_blank" rel="noopener noreferrer">reddit</a></>
-                ),
-
-                user.pronouns && `\nPronouns: ${user.pronouns}`,
-                user.gender && `\nGender: ${user.gender}`,
-                user.sexuality && `\nSexuality: ${user.sexuality}`,
-                user.age?.value && `\nAge: ${user.age.value}`,
-                user.birthday && `\nBirthday: ${user.birthday}`,
-            ].filter(Boolean)}
-        </p>
-    );
-
-    if (!user) return <div className='test'>Loading ↻</div>
-    console.log(JSON.stringify(user.usernames.discord))
+    if (!user) return <InfoBlock header={"User"} paragraph={"Loading ↻"} />
     return (
         <>
             <div className="user-page">
                 <InfoBlock img={user.avatarUrl} header={user.id} paragraph={user.description} />
 
-                <div className="flex-container-column">
+                <div className="flex-container-column-start-top">
                     <div className="flex-container-row">
                         {user.usernames.discord.at(0) !== null && (<InfoBlock header="Discord" paragraph=
                             {<>{`Username: ${user.usernames.discord.at(0)}${user.usernames.discord.length > 1
