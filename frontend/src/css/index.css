@@ -34,7 +34,7 @@
 
   --main-color: rgb(0, 200, 40);
 
-  --navbar-height: clamp(40px, 5vh, 120px);
+  --navbar-height: clamp(55px, 5vh, 120px);
   --navbar-link-gap: clamp(6px, 1.5vw, 30px);
 
   --userbar-width: clamp(100px, 20vw, 500px);
