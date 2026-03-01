@@ -22,10 +22,12 @@
 
     z-index: 999;
 
-    a {
+    > a {
         background-color: var(--navbar-background-color-main);
         color: var(--navbar-link-font-color);
         text-align: center;
+
+        border: 1px solid var(--border-color-main);
 
         text-decoration: none;
 

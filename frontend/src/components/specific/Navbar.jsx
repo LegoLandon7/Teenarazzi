@@ -30,6 +30,8 @@ function Navbar() {
                 <NavLink to="/" onClick={close}>Home</NavLink>
                 <NavLink to="/about" onClick={close}>About</NavLink>
                 <NavLink to="/users" onClick={close}>Users</NavLink>
+                <NavLink to="/contact" onClick={close}>Contact</NavLink>
+                <NavLink to="/socials" onClick={close}>Socials</NavLink>
             </div>
         </nav>
     )
