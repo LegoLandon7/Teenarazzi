@@ -81,7 +81,7 @@ function IconStats() {
                 Reddit
             </h1><p>
                 Total members: <span style={{color: typeof redditTotal === 'number' && !isNaN(redditTotal) ? "green" : "red"}}>{redditTotal}</span> <br />
-                Active members: <span style={{color: typeof redditActive === 'number' && !isNaN(redditActive) ? "green" : "red"}}>{redditActive}</span> <br />
+                Weekly visitors: <span style={{color: typeof redditActive === 'number' && !isNaN(redditActive) ? "green" : "red"}}>{redditActive}</span> <br />
             </p><div className="last-updated">{lastUpdated ? "Last Updated: " + formatTimestamp(lastUpdated) : "Last Updated: N/A"}</div></a>
         </div>
     )

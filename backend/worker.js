@@ -11,6 +11,8 @@ const DEFAULT_USERS_SOURCE_ALLOWED_HOSTS = [
 const MAX_USERS_SOURCE_BYTES = 512 * 1024
 const LEGACY_USERS_CACHE_KEY = "users:legacy:enriched:v1"
 const LEGACY_USERS_CACHE_TTL_SECONDS = 15 * 60
+const REDDIT_ACTIVITY_CACHE_KEY = "stats:reddit:weekly-active:v1"
+const REDDIT_ACTIVITY_REFRESH_SECONDS = 12 * 60 * 60
 const STATUS_VALUES = new Set(["pending", "approved", "rejected", "spam"])
 const COMMUNITY_VALUES = new Set(["discord", "reddit", "both"])
 const SESSION_COOKIE_NAME = "trz_admin_session"
@@ -1756,15 +1758,7 @@ async function fetchStats(env) {
 
   const [discord, reddit] = await Promise.all([
     fetchDiscordStats(botToken, guildId),
-    fetch(`https://www.reddit.com/r/${subreddit}/about.json`, {
-      headers: { "User-Agent": "teenarazzi/1.0" }
-    })
-      .then(res => res.json())
-      .then(data => ({
-        members: data?.data?.subscribers ?? null,
-        online: data?.data?.accounts_active ?? null
-      }))
-      .catch(() => ({ members: null, online: null }))
+    fetchRedditStats(env, subreddit)
   ])
 
   return {
@@ -1772,4 +1766,198 @@ async function fetchStats(env) {
     reddit,
     timestamp: unixNow()
   }
+}
+
+async function fetchRedditStats(env, subreddit) {
+  const now = unixNow()
+  const cached = await getCachedRedditActivity(env)
+  const about = await fetchRedditAboutStats(subreddit)
+
+  let members = about.members ?? cached.members
+  let weeklyActive = null
+
+  const hasFreshCache = (
+    Number.isFinite(cached.checkedAt)
+    && cached.checkedAt > 0
+    && (now - cached.checkedAt) < REDDIT_ACTIVITY_REFRESH_SECONDS
+  )
+
+  if (hasFreshCache && Number.isFinite(cached.weeklyActive)) {
+    weeklyActive = cached.weeklyActive
+  } else {
+    const scrapedWeeklyActive = await scrapeRedditWeeklyActive(subreddit)
+    if (Number.isFinite(scrapedWeeklyActive)) {
+      weeklyActive = scrapedWeeklyActive
+      await setCachedRedditActivity(env, {
+        weeklyActive: scrapedWeeklyActive,
+        members,
+        checkedAt: now
+      })
+    } else if (Number.isFinite(cached.weeklyActive)) {
+      weeklyActive = cached.weeklyActive
+    }
+  }
+
+  if (!Number.isFinite(members) && Number.isFinite(cached.members)) {
+    members = cached.members
+  }
+
+  const online = Number.isFinite(weeklyActive)
+    ? weeklyActive
+    : (about.apiActive ?? null)
+
+  return {
+    members: Number.isFinite(members) ? members : null,
+    online: Number.isFinite(online) ? online : null
+  }
+}
+
+async function fetchRedditAboutStats(subreddit) {
+  try {
+    const response = await fetch(`https://www.reddit.com/r/${subreddit}/about.json`, {
+      headers: { "User-Agent": "teenarazzi/1.0 (+https://teenarazzi.com)" }
+    })
+    if (!response.ok) {
+      return {
+        members: null,
+        apiActive: null
+      }
+    }
+
+    const data = await response.json()
+    return {
+      members: toCountOrNull(data?.data?.subscribers),
+      apiActive: toCountOrNull(data?.data?.accounts_active)
+    }
+  } catch {
+    return {
+      members: null,
+      apiActive: null
+    }
+  }
+}
+
+async function scrapeRedditWeeklyActive(subreddit) {
+  const urls = [
+    `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/`,
+    `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/`
+  ]
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "teenarazzi-stats-bot/1.0 (+https://teenarazzi.com)"
+        }
+      })
+      if (!response.ok) continue
+
+      const html = await response.text()
+      const parsed = extractRedditWeeklyActiveFromHtml(html)
+      if (Number.isFinite(parsed)) return parsed
+    } catch {
+      // Ignore per-source scrape failures and continue fallback chain.
+    }
+  }
+
+  return null
+}
+
+function extractRedditWeeklyActiveFromHtml(html) {
+  if (typeof html !== "string" || !html) return null
+
+  // New Reddit embeds several machine-readable numeric fields in HTML.
+  const machineReadablePatterns = [
+    /weekly-active-users\s*=\s*"(\d{1,12})"/i,
+    /"active_user_count"\s*:\s*(\d{1,12})/i,
+    /"activeCount"\s*:\s*(\d{1,12})/i,
+    /active-count\s*=\s*"(\d{1,12})"/i,
+    /"onlineCount"\s*:\s*(\d{1,12})/i,
+    /"users_here_now"\s*:\s*(\d{1,12})/i
+  ]
+
+  for (const pattern of machineReadablePatterns) {
+    const match = html.match(pattern)
+    if (!match) continue
+    const parsed = toCountOrNull(match[1])
+    if (Number.isFinite(parsed)) return parsed
+  }
+
+  const slotMatch = html.match(/slot\s*=\s*"weekly-active-users-count"\s*>\s*([^<]+)\s*</i)
+  if (slotMatch) {
+    const parsed = parseCompactCount(slotMatch[1])
+    if (Number.isFinite(parsed)) return parsed
+  }
+
+  // Fallback for legacy/visible text values like "1,234 users here now".
+  const textPatterns = [
+    /([0-9][0-9,.\s]*[kmb]?)\s+users here now/i,
+    /([0-9][0-9,.\s]*[kmb]?)\s+online/i,
+    /([0-9][0-9,.\s]*[kmb]?)\s+active/i,
+    /([0-9][0-9,.\s]*[kmb]?)\s+weekly active/i
+  ]
+
+  for (const pattern of textPatterns) {
+    const match = html.match(pattern)
+    if (!match) continue
+    const parsed = parseCompactCount(match[1])
+    if (Number.isFinite(parsed)) return parsed
+  }
+
+  return null
+}
+
+function parseCompactCount(value) {
+  if (typeof value !== "string") return null
+  const cleaned = value.trim().toLowerCase().replace(/\s+/g, "").replace(/,/g, "")
+  const match = cleaned.match(/^(\d+(?:\.\d+)?)([kmb])?$/i)
+  if (!match) return null
+
+  const base = Number(match[1])
+  if (!Number.isFinite(base)) return null
+
+  const suffix = (match[2] || "").toLowerCase()
+  if (suffix === "k") return Math.round(base * 1_000)
+  if (suffix === "m") return Math.round(base * 1_000_000)
+  if (suffix === "b") return Math.round(base * 1_000_000_000)
+  return Math.round(base)
+}
+
+function toCountOrNull(value) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 0) return null
+  return Math.floor(parsed)
+}
+
+async function getCachedRedditActivity(env) {
+  if (!env.STATS?.get) {
+    return {
+      weeklyActive: null,
+      members: null,
+      checkedAt: null
+    }
+  }
+
+  const raw = await env.STATS.get(REDDIT_ACTIVITY_CACHE_KEY)
+  const parsed = safeJsonParse(raw)
+  return {
+    weeklyActive: toCountOrNull(parsed?.weeklyActive),
+    members: toCountOrNull(parsed?.members),
+    checkedAt: toCountOrNull(parsed?.checkedAt)
+  }
+}
+
+async function setCachedRedditActivity(env, activity) {
+  if (!env.STATS?.put) return
+  await env.STATS.put(
+    REDDIT_ACTIVITY_CACHE_KEY,
+    JSON.stringify({
+      weeklyActive: toCountOrNull(activity?.weeklyActive),
+      members: toCountOrNull(activity?.members),
+      checkedAt: toCountOrNull(activity?.checkedAt) || unixNow()
+    }),
+    {
+      expirationTtl: 7 * 24 * 60 * 60
+    }
+  )
 }
