@@ -509,17 +509,80 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
   const requestedSlug = readText(payload, "slug", { required: false, max: 120 })
   const now = unixNow()
 
+  let nextPayload = safeJsonParse(existing.payload_json)
+  if (payload.submissionData !== undefined) {
+    const submissionData = payload.submissionData
+    if (!submissionData || typeof submissionData !== "object" || Array.isArray(submissionData)) {
+      throw new HttpError(400, "submissionData must be a JSON object")
+    }
+
+    const mergedSubmissionData = {
+      ...submissionData,
+      // Keep required fields valid even if omitted by older admin clients.
+      middyGoat: (
+        typeof submissionData.middyGoat === "string" && submissionData.middyGoat.trim()
+      )
+        ? submissionData.middyGoat
+        : (typeof nextPayload?.middyGoat === "string" ? nextPayload.middyGoat : "yes"),
+      website: typeof submissionData.website === "string" ? submissionData.website : ""
+    }
+
+    const normalized = validateAndNormalizeSubmission(
+      mergedSubmissionData,
+      Number(existing.created_at) || now
+    )
+    normalized.avatars = await fetchSubmissionAvatars(env, normalized)
+    nextPayload = normalized
+  }
+
+  const payloadDisplayName = typeof nextPayload?.displayName === "string"
+    ? nextPayload.displayName.trim()
+    : ""
+  const payloadCommunity = typeof nextPayload?.activeCommunity === "string"
+    ? nextPayload.activeCommunity.trim()
+    : ""
+  const nextDisplayName = payloadDisplayName || existing.display_name
+  const nextActiveCommunity = COMMUNITY_VALUES.has(payloadCommunity)
+    ? payloadCommunity
+    : existing.active_community
+  const nextPayloadJson = payload.submissionData !== undefined
+    ? JSON.stringify(nextPayload)
+    : existing.payload_json
+
   await env.DB.prepare(
     `UPDATE submissions
-      SET status = ?1, review_note = ?2, reviewed_by = ?3, reviewed_at = ?4, updated_at = ?4
-      WHERE id = ?5`
+      SET status = ?1,
+          review_note = ?2,
+          reviewed_by = ?3,
+          reviewed_at = ?4,
+          display_name = ?5,
+          active_community = ?6,
+          payload_json = ?7,
+          updated_at = ?4
+      WHERE id = ?8`
   )
-    .bind(status, reviewNote, reviewedBy, now, submissionId)
+    .bind(
+      status,
+      reviewNote,
+      reviewedBy,
+      now,
+      nextDisplayName,
+      nextActiveCommunity,
+      nextPayloadJson,
+      submissionId
+    )
     .run()
+
+  const updatedSubmission = {
+    ...existing,
+    display_name: nextDisplayName,
+    active_community: nextActiveCommunity,
+    payload_json: nextPayloadJson
+  }
 
   let createdUserSlug = null
   if (status === "approved" && promoteToUsers) {
-    createdUserSlug = await upsertUserFromSubmission(env, existing, requestedSlug, now)
+    createdUserSlug = await upsertUserFromSubmission(env, updatedSubmission, requestedSlug, now)
   }
 
   return jsonResponse(

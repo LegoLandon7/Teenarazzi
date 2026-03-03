@@ -25,6 +25,24 @@ const EMPTY_USER_FORM = {
   redditAvatarUrl: ""
 }
 
+const EMPTY_SUBMISSION_FORM = {
+  displayName: "",
+  activeCommunity: "",
+  discordUsername: "",
+  discordOldUsernames: "",
+  redditUsername: "",
+  redditOldUsernames: "",
+  nicknames: "",
+  pronouns: "",
+  gender: "",
+  sexuality: "",
+  age: "",
+  birthday: "",
+  description: "",
+  extraDetails: "",
+  middyGoat: "yes"
+}
+
 async function parseJsonResponse(res) {
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
@@ -183,19 +201,47 @@ function formToUser(form) {
   }
 }
 
-function ReadonlyField({ label, value, multiline = false }) {
-  const text = cleanText(value)
+function submissionPayloadToForm(payload) {
+  const ageValue = payload?.details?.age
 
-  return (
-    <div className="admin-readonly-field">
-      <label>{label}</label>
-      {multiline ? (
-        <textarea readOnly value={text} rows={4} />
-      ) : (
-        <input readOnly value={text} />
-      )}
-    </div>
-  )
+  return {
+    displayName: cleanText(payload?.displayName),
+    activeCommunity: cleanText(payload?.activeCommunity),
+    discordUsername: cleanText(payload?.socials?.discord?.current),
+    discordOldUsernames: listToCsv(payload?.socials?.discord?.old),
+    redditUsername: cleanText(payload?.socials?.reddit?.current),
+    redditOldUsernames: listToCsv(payload?.socials?.reddit?.old),
+    nicknames: listToCsv(payload?.nicknames),
+    pronouns: cleanText(payload?.details?.pronouns),
+    gender: cleanText(payload?.details?.gender),
+    sexuality: cleanText(payload?.details?.sexuality),
+    age: ageValue === null || ageValue === undefined ? "" : String(ageValue),
+    birthday: cleanText(payload?.details?.birthday),
+    description: cleanText(payload?.description),
+    extraDetails: cleanText(payload?.extraDetails),
+    middyGoat: cleanText(payload?.middyGoat) || "yes"
+  }
+}
+
+function formToSubmissionData(form) {
+  return {
+    displayName: cleanText(form.displayName),
+    activeCommunity: cleanText(form.activeCommunity),
+    discordUsername: cleanText(form.discordUsername),
+    discordOldUsernames: cleanText(form.discordOldUsernames),
+    redditUsername: cleanText(form.redditUsername),
+    redditOldUsernames: cleanText(form.redditOldUsernames),
+    nicknames: cleanText(form.nicknames),
+    description: cleanText(form.description),
+    pronouns: cleanText(form.pronouns),
+    gender: cleanText(form.gender),
+    sexuality: cleanText(form.sexuality),
+    age: cleanText(form.age),
+    birthday: cleanText(form.birthday),
+    extraDetails: cleanText(form.extraDetails),
+    middyGoat: cleanText(form.middyGoat) || "yes",
+    website: ""
+  }
 }
 
 function AvatarTile({ label, url }) {
@@ -224,6 +270,7 @@ function Admin() {
   const [submissions, setSubmissions] = useState([])
   const [selectedSubmissionId, setSelectedSubmissionId] = useState("")
   const [selectedSubmission, setSelectedSubmission] = useState(null)
+  const [submissionForm, setSubmissionForm] = useState(EMPTY_SUBMISSION_FORM)
   const [reviewNote, setReviewNote] = useState("")
   const [slugOverride, setSlugOverride] = useState("")
   const [promoteToUsers, setPromoteToUsers] = useState(true)
@@ -307,6 +354,7 @@ function Admin() {
   const loadSubmissionDetail = useCallback(async (submissionId) => {
     if (!submissionId) {
       setSelectedSubmission(null)
+      setSubmissionForm(EMPTY_SUBMISSION_FORM)
       return
     }
 
@@ -317,11 +365,13 @@ function Admin() {
         })
       )
       setSelectedSubmission(data.submission || null)
+      setSubmissionForm(submissionPayloadToForm(data.submission?.payload))
       setReviewNote(data.submission?.review_note || "")
       setSlugOverride("")
       setQueueError("")
     } catch (error) {
       setSelectedSubmission(null)
+      setSubmissionForm(EMPTY_SUBMISSION_FORM)
       setQueueError(error.message)
     }
   }, [])
@@ -441,6 +491,7 @@ function Admin() {
     setIsAuthed(false)
     setSelectedSubmission(null)
     setSelectedSubmissionId("")
+    setSubmissionForm(EMPTY_SUBMISSION_FORM)
     setUsers([])
     setUsersListLoading(false)
     hasLoadedUsersRef.current = false
@@ -465,7 +516,8 @@ function Admin() {
             reviewNote,
             slug: slugOverride || undefined,
             promoteToUsers: status === "approved" ? promoteToUsers : false,
-            reviewedBy: "admin-ui"
+            reviewedBy: "admin-ui",
+            submissionData: formToSubmissionData(submissionForm)
           })
         })
       )
@@ -481,6 +533,13 @@ function Admin() {
     } finally {
       setActionLoading(false)
     }
+  }
+
+  const updateSubmissionField = (event) => {
+    const { name, value } = event.target
+    setSubmissionForm(prev => ({ ...prev, [name]: value }))
+    setQueueMessage("")
+    setQueueError("")
   }
 
   const updateUserField = (event) => {
@@ -712,9 +771,9 @@ function Admin() {
 
               {selectedSubmission && (
                 <>
-                  <h2>{selectedSubmission.display_name}</h2>
+                  <h2>{submissionForm.displayName || selectedSubmission.display_name}</h2>
                   <p>{`Submitted: ${toLocalDateTime(selectedSubmission.created_at)}`}</p>
-                  <p>{`Community: ${selectedSubmission.active_community}`}</p>
+                  <p>{`Community: ${submissionForm.activeCommunity || selectedSubmission.active_community}`}</p>
                   <p>{`Current status: ${selectedSubmission.status}`}</p>
 
                   <div className="admin-avatar-grid">
@@ -722,31 +781,158 @@ function Admin() {
                     <AvatarTile label="Reddit Avatar" url={selectedSubmissionPayload?.avatars?.reddit} />
                   </div>
 
-                  <div className="admin-readonly-grid">
-                    <ReadonlyField label="Display Name" value={selectedSubmissionPayload?.displayName} />
-                    <ReadonlyField label="Active On" value={selectedSubmissionPayload?.activeCommunity} />
-                    <ReadonlyField label="Discord Username" value={selectedSubmissionPayload?.socials?.discord?.current} />
-                    <ReadonlyField label="Discord Old Names" value={listToCsv(selectedSubmissionPayload?.socials?.discord?.old)} />
-                    <ReadonlyField label="Reddit Username" value={selectedSubmissionPayload?.socials?.reddit?.current} />
-                    <ReadonlyField label="Reddit Old Names" value={listToCsv(selectedSubmissionPayload?.socials?.reddit?.old)} />
-                    <ReadonlyField label="Nicknames" value={listToCsv(selectedSubmissionPayload?.nicknames)} />
-                    <ReadonlyField label="Pronouns" value={selectedSubmissionPayload?.details?.pronouns} />
-                    <ReadonlyField label="Gender" value={selectedSubmissionPayload?.details?.gender} />
-                    <ReadonlyField label="Sexuality" value={selectedSubmissionPayload?.details?.sexuality} />
-                    <ReadonlyField label="Age" value={selectedSubmissionPayload?.details?.age} />
-                    <ReadonlyField label="Birthday" value={selectedSubmissionPayload?.details?.birthday} />
-                  </div>
+                  <div className="admin-form-grid">
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-display-name">Display Name *</label>
+                      <input
+                        id="submission-display-name"
+                        name="displayName"
+                        value={submissionForm.displayName}
+                        onChange={updateSubmissionField}
+                      />
+                    </div>
 
-                  <ReadonlyField
-                    label="Description"
-                    value={selectedSubmissionPayload?.description}
-                    multiline
-                  />
-                  <ReadonlyField
-                    label="Extra Details"
-                    value={selectedSubmissionPayload?.extraDetails}
-                    multiline
-                  />
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-active-community">Active On *</label>
+                      <select
+                        id="submission-active-community"
+                        name="activeCommunity"
+                        value={submissionForm.activeCommunity}
+                        onChange={updateSubmissionField}
+                      >
+                        <option value="">Select community</option>
+                        <option value="discord">Discord</option>
+                        <option value="reddit">Reddit</option>
+                        <option value="both">Both</option>
+                      </select>
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-discord-current">Discord Username</label>
+                      <input
+                        id="submission-discord-current"
+                        name="discordUsername"
+                        value={submissionForm.discordUsername}
+                        onChange={updateSubmissionField}
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-discord-old">Old Discord Names</label>
+                      <input
+                        id="submission-discord-old"
+                        name="discordOldUsernames"
+                        value={submissionForm.discordOldUsernames}
+                        onChange={updateSubmissionField}
+                        placeholder="name_1, name_2"
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-reddit-current">Reddit Username</label>
+                      <input
+                        id="submission-reddit-current"
+                        name="redditUsername"
+                        value={submissionForm.redditUsername}
+                        onChange={updateSubmissionField}
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-reddit-old">Old Reddit Names</label>
+                      <input
+                        id="submission-reddit-old"
+                        name="redditOldUsernames"
+                        value={submissionForm.redditOldUsernames}
+                        onChange={updateSubmissionField}
+                        placeholder="u/name_1, u/name_2"
+                      />
+                    </div>
+
+                    <div className="admin-form-field admin-form-field-wide">
+                      <label htmlFor="submission-nicknames">Nicknames</label>
+                      <input
+                        id="submission-nicknames"
+                        name="nicknames"
+                        value={submissionForm.nicknames}
+                        onChange={updateSubmissionField}
+                        placeholder="nick_1, nick_2"
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-pronouns">Pronouns</label>
+                      <input
+                        id="submission-pronouns"
+                        name="pronouns"
+                        value={submissionForm.pronouns}
+                        onChange={updateSubmissionField}
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-gender">Gender</label>
+                      <input
+                        id="submission-gender"
+                        name="gender"
+                        value={submissionForm.gender}
+                        onChange={updateSubmissionField}
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-sexuality">Sexuality</label>
+                      <input
+                        id="submission-sexuality"
+                        name="sexuality"
+                        value={submissionForm.sexuality}
+                        onChange={updateSubmissionField}
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-age">Age</label>
+                      <input
+                        id="submission-age"
+                        name="age"
+                        value={submissionForm.age}
+                        onChange={updateSubmissionField}
+                        placeholder="0-120"
+                      />
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="submission-birthday">Birthday</label>
+                      <input
+                        id="submission-birthday"
+                        name="birthday"
+                        value={submissionForm.birthday}
+                        onChange={updateSubmissionField}
+                      />
+                    </div>
+
+                    <div className="admin-form-field admin-form-field-wide">
+                      <label htmlFor="submission-description">Description *</label>
+                      <textarea
+                        id="submission-description"
+                        name="description"
+                        value={submissionForm.description}
+                        onChange={updateSubmissionField}
+                        rows={5}
+                      />
+                    </div>
+
+                    <div className="admin-form-field admin-form-field-wide">
+                      <label htmlFor="submission-extra-details">Extra Details</label>
+                      <textarea
+                        id="submission-extra-details"
+                        name="extraDetails"
+                        value={submissionForm.extraDetails}
+                        onChange={updateSubmissionField}
+                        rows={4}
+                      />
+                    </div>
+                  </div>
 
                   <label htmlFor="review-note">Review Note</label>
                   <textarea

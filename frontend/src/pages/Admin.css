@@ -42,6 +42,7 @@
 .admin-login input,
 .admin-login button,
 .admin-detail input,
+.admin-detail select,
 .admin-detail textarea,
 .admin-detail button,
 .admin-list select,
@@ -55,6 +56,7 @@
 
 .admin-login input,
 .admin-detail input,
+.admin-detail select,
 .admin-detail textarea,
 .admin-list select,
 .admin-list input {

@@ -92,8 +92,7 @@
 }
 
 .user-infobox-desktop {
-    position: sticky;
-    top: calc(var(--navbar-height) + var(--main-gap-size));
+    position: static;
 }
 
 .user-infobox-mobile {

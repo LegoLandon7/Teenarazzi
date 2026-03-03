@@ -184,16 +184,6 @@ function Apply() {
         setStepIndex(prev => Math.max(prev - 1, 0))
     }
 
-    const resetForm = () => {
-        if (isSubmitting) return
-        setFormData(INITIAL_FORM)
-        setStepIndex(0)
-        setError("")
-        setSubmitted(false)
-        setSubmissionId("")
-        resetTurnstile()
-    }
-
     const handleSubmit = (event) => {
         event.preventDefault()
         if (isSubmitting) return
@@ -295,12 +285,6 @@ function Apply() {
                         {submissionId && (
                             <p className="apply-complete-id">{`Submission ID: ${submissionId}`}</p>
                         )}
-                    </div>
-
-                    <div className="apply-actions">
-                        <button type="button" onClick={resetForm}>
-                            Submit Another Application
-                        </button>
                     </div>
                 </section>
             </div>
