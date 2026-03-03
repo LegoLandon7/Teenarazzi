@@ -8,11 +8,22 @@ function UserBar() {
     const [users, setUsers] = useState({})
     const [search, setSearch] = useState("")
     const [sort, setSort] = useState("az")
+    const [isRefreshing, setIsRefreshing] = useState(false)
+
+    const loadUsers = async (forceRefresh = false) => {
+        setIsRefreshing(true)
+        try {
+            const data = await fetchUsersMap({ forceRefresh })
+            setUsers(data)
+        } catch {
+            setUsers({})
+        } finally {
+            setIsRefreshing(false)
+        }
+    }
 
     useEffect(() => {
-        fetchUsersMap()
-            .then(data => setUsers(data))
-            .catch(() => setUsers({}))
+        loadUsers(false)
     }, [])
 
     const filteredUsers = Object.keys(users)
@@ -26,6 +37,14 @@ function UserBar() {
      return (
         <nav className="userbar">                
         <NavLink to="/users">Home</NavLink>
+            <button
+                type="button"
+                className="user-refresh"
+                onClick={() => loadUsers(true)}
+                disabled={isRefreshing}
+            >
+                {isRefreshing ? "Refreshing..." : "Refresh users"}
+            </button>
             <input
                 type="text"
                 placeholder="Search users..."

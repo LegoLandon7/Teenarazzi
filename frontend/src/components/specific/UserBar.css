@@ -36,6 +36,24 @@
         }
     }
 
+    > button {
+        background-color: var(--navbar-background-color-main);
+        color: var(--navbar-link-font-color);
+        text-align: center;
+        border: 1px solid var(--border-color-main);
+        cursor: pointer;
+        padding: 8px 10px;
+
+        &:hover:not(:disabled) {
+            background-color: var(--navbar-link-hover-color);
+        }
+
+        &:disabled {
+            opacity: 0.75;
+            cursor: default;
+        }
+    }
+
     input {
         background-color: var(--navbar-background-color-main);
         color: var(--navbar-link-font-color);

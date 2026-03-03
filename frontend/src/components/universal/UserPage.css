@@ -66,6 +66,13 @@
     overflow-wrap: anywhere;
 }
 
+.user-card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
 .user-card h2 {
     margin: 0;
     font-size: var(--small-header-font-size);
@@ -234,6 +241,26 @@
     filter: brightness(1.15);
 }
 
+.user-refresh-button {
+    border: 1px solid var(--border-color-main);
+    border-radius: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--basic-font-color);
+    font-size: clamp(11px, 1.3vw, 14px);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.user-refresh-button:disabled {
+    opacity: 0.72;
+    cursor: default;
+}
+
+.user-refresh-button:hover:not(:disabled) {
+    filter: brightness(1.12);
+}
+
 @media screen and (max-width: 1024px) {
     .user-layout {
         grid-template-columns: 1fr;
@@ -246,5 +273,9 @@
     .user-infobox-mobile {
         display: block;
         margin-bottom: var(--main-gap-size);
+    }
+
+    .user-card-title-row {
+        flex-wrap: wrap;
     }
 }

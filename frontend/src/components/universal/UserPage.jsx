@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { fetchUsersMap } from "../../lib/usersApi.js"
 
 import "./UserPage.css"
@@ -84,49 +84,63 @@ function UserPage() {
         status: "loading",
         user: null
     })
+    const [isRefreshing, setIsRefreshing] = useState(false)
     const [copyState, setCopyState] = useState({ userId: null, fieldId: "" })
     const [selectedAvatarKey, setSelectedAvatarKey] = useState("")
     const copyTimerRef = useRef(null)
+    const requestIdRef = useRef(0)
 
-    useEffect(() => {
-        let cancelled = false
+    const loadUser = useCallback(async (targetUserId, options = {}) => {
+        const { forceRefresh = false, showLoading = false } = options
+        const requestId = requestIdRef.current + 1
+        requestIdRef.current = requestId
 
-        fetchUsersMap()
-            .then(data => {
-                if (cancelled) return
-                const nextUser = data?.[userId]
-
-                if (!nextUser) {
-                    setSelectedAvatarKey("")
-                    setUserState({
-                        userId,
-                        status: "not_found",
-                        user: null
-                    })
-                    return
-                }
-
-                setSelectedAvatarKey("")
-                setUserState({
-                    userId,
-                    status: "ready",
-                    user: nextUser
-                })
+        if (showLoading) {
+            setUserState({
+                userId: targetUserId,
+                status: "loading",
+                user: null
             })
-            .catch(() => {
-                if (cancelled) return
-                setSelectedAvatarKey("")
+        }
+
+        try {
+            const data = await fetchUsersMap({ forceRefresh })
+            if (requestIdRef.current !== requestId) return
+
+            const nextUser = data?.[targetUserId]
+            setSelectedAvatarKey("")
+
+            if (!nextUser) {
                 setUserState({
-                    userId,
-                    status: "error",
+                    userId: targetUserId,
+                    status: "not_found",
                     user: null
                 })
-            })
+                return
+            }
 
-        return () => {
-            cancelled = true
+            setUserState({
+                userId: targetUserId,
+                status: "ready",
+                user: nextUser
+            })
+        } catch {
+            if (requestIdRef.current !== requestId) return
+            setSelectedAvatarKey("")
+            setUserState({
+                userId: targetUserId,
+                status: "error",
+                user: null
+            })
         }
-    }, [userId])
+    }, [])
+
+    useEffect(() => {
+        loadUser(userId, { showLoading: true })
+        return () => {
+            requestIdRef.current += 1
+        }
+    }, [userId, loadUser])
 
     useEffect(() => {
         return () => {
@@ -147,6 +161,16 @@ function UserPage() {
             }, COPY_TIMEOUT_MS)
         } catch {
             // Ignore clipboard errors and keep the UI functional.
+        }
+    }
+
+    const handleRefresh = async () => {
+        if (isRefreshing) return
+        setIsRefreshing(true)
+        try {
+            await loadUser(userId, { forceRefresh: true, showLoading: false })
+        } finally {
+            setIsRefreshing(false)
         }
     }
 
@@ -330,7 +354,17 @@ function UserPage() {
 
                 <article className="user-article">
                     <section className="user-card user-article-header">
-                        <h1>{user.id}</h1>
+                        <div className="user-card-title-row">
+                            <h1>{user.id}</h1>
+                            <button
+                                type="button"
+                                className="user-refresh-button"
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                            >
+                                {isRefreshing ? "Refreshing..." : "Refresh"}
+                            </button>
+                        </div>
                         <hr />
                         <h2>About</h2>
                         <p>{user.description}</p>
