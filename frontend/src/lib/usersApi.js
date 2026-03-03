@@ -8,13 +8,14 @@ const USERS_API_BASE = (
 
 async function fetchUsersFromBackend() {
   const candidates = [
-    `${USERS_API_BASE}/users`,
-    apiUrl("/v1/users")
+    apiUrl("/v1/users"),
+    `${USERS_API_BASE}/v1/users`,
+    `${USERS_API_BASE}/users`
   ]
 
   for (const url of candidates) {
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { cache: "no-store" })
       if (!res.ok) continue
       const data = await res.json()
 
