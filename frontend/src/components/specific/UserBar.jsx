@@ -1,18 +1,18 @@
-import { useParams, NavLink } from "react-router-dom"
+import { NavLink } from "react-router-dom"
 import { useState, useEffect } from "react"
+import { fetchUsersMap } from "../../lib/usersApi.js"
 
 import './UserBar.css'
 
 function UserBar() {
-    const { userId } = useParams()
     const [users, setUsers] = useState({})
     const [search, setSearch] = useState("")
     const [sort, setSort] = useState("az")
 
     useEffect(() => {
-        fetch("/users.json")
-            .then(res => res.json())
+        fetchUsersMap()
             .then(data => setUsers(data))
+            .catch(() => setUsers({}))
     }, [])
 
     const filteredUsers = Object.keys(users)

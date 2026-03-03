@@ -1,0 +1,24 @@
+name = "teenarazzi-api"
+main = "worker.js"
+compatibility_date = "2026-03-03"
+account_id = "b3e1d1bebe2a0f4053acd713dca1948d"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[vars]
+RATE_LIMIT_PER_HOUR = "5"
+CORS_ALLOWED_ORIGINS = "http://localhost:4173,http://127.0.0.1:4173,http://localhost:5173,http://127.0.0.1:5173,https://teenarazzi.com,https://www.teenarazzi.com"
+DISCORD_GUILD_ID = "1395741172256739348"
+USERS_SOURCE_URL = "https://teenarazzi.com/users.json"
+USERS_SOURCE_ALLOWED_HOSTS = "teenarazzi.com,www.teenarazzi.com,api.teenarazzi.com"
+
+[[kv_namespaces]]
+binding = "STATS"
+id = "6fc805934f844f69b16a31931679c6f6"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "teenarazzi-submissions-db"
+database_id = "c95e41dd-640f-433d-8bc4-3dfa76806694"

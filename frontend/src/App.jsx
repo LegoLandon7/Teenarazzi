@@ -12,6 +12,8 @@ import About from './pages/About.jsx'
 import Users from './pages/Users.jsx'
 import Contact from './pages/Contact.jsx'
 import Socials from './pages/Socials.jsx'
+import Apply from './pages/Apply.jsx'
+import Admin from './pages/Admin.jsx'
 
 import ScrollToTop from "./components/tools/ScrollToTop.jsx"
 
@@ -28,6 +30,8 @@ function App() {
           <Route index element={<DefaultUserPage />} />
           <Route path=":userId" element={<UserPage />}/>
         </Route>
+        <Route path="/apply" element={<Apply />}/>
+        <Route path="/admin" element={<Admin />}/>
         <Route path="/contact" element={<Contact />}/>
         <Route path="/socials" element={<Socials />}/>
       </Routes>
