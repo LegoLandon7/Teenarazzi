@@ -55,7 +55,7 @@
             width: 18px;
             height: 18px;
             object-fit: contain;
-            filter: var(--icon-filter, none);
+            filter: var(--icon-filter, invert(1) brightness(0.8));
         }
 
         &:hover:not(:disabled):not(.active) {

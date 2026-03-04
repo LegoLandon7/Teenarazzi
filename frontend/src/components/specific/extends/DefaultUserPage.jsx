@@ -2,7 +2,7 @@ import InfoBlock from '../../universal/InfoBlock.jsx'
 import { Link } from "react-router-dom"
 
 import '../../universal/UserPage.css'
-import '../../../css/tools/flex-container.css'
+import './DefaultUserPage.css'
 
 function DefaultUserPage() {
     return (
