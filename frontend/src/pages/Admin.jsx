@@ -34,7 +34,6 @@ const EMPTY_SUBMISSION_FORM = {
   redditOldUsernames: "",
   nicknames: "",
   pronouns: "",
-  gender: "",
   sexuality: "",
   age: "",
   birthday: "",
@@ -213,7 +212,6 @@ function submissionPayloadToForm(payload) {
     redditOldUsernames: listToCsv(payload?.socials?.reddit?.old),
     nicknames: listToCsv(payload?.nicknames),
     pronouns: cleanText(payload?.details?.pronouns),
-    gender: cleanText(payload?.details?.gender),
     sexuality: cleanText(payload?.details?.sexuality),
     age: ageValue === null || ageValue === undefined ? "" : String(ageValue),
     birthday: cleanText(payload?.details?.birthday),
@@ -234,7 +232,6 @@ function formToSubmissionData(form) {
     nicknames: cleanText(form.nicknames),
     description: cleanText(form.description),
     pronouns: cleanText(form.pronouns),
-    gender: cleanText(form.gender),
     sexuality: cleanText(form.sexuality),
     age: cleanText(form.age),
     birthday: cleanText(form.birthday),
@@ -866,16 +863,6 @@ function Admin() {
                         id="submission-pronouns"
                         name="pronouns"
                         value={submissionForm.pronouns}
-                        onChange={updateSubmissionField}
-                      />
-                    </div>
-
-                    <div className="admin-form-field">
-                      <label htmlFor="submission-gender">Gender</label>
-                      <input
-                        id="submission-gender"
-                        name="gender"
-                        value={submissionForm.gender}
                         onChange={updateSubmissionField}
                       />
                     </div>

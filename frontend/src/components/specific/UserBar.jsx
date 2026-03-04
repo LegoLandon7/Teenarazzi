@@ -1,6 +1,9 @@
-import { NavLink } from "react-router-dom"
+import { NavLink, useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { fetchUsersMap } from "../../lib/usersApi.js"
+
+import homeIcon from "../../assets/home.svg"
+import refreshIcon from "../../assets/refresh.svg"
 
 import './UserBar.css'
 
@@ -9,6 +12,7 @@ function UserBar() {
     const [search, setSearch] = useState("")
     const [sort, setSort] = useState("az")
     const [isRefreshing, setIsRefreshing] = useState(false)
+    const { userId } = useParams()
 
     const loadUsers = async (forceRefresh = false) => {
         setIsRefreshing(true)
@@ -32,45 +36,68 @@ function UserBar() {
             if (sort === "az") return a.localeCompare(b)
             if (sort === "za") return b.localeCompare(a)
             return 0
-    })
+        })
 
-     return (
-        <nav className="userbar">                
-        <NavLink to="/users">Home</NavLink>
-            <button
-                type="button"
-                className="user-refresh"
-                onClick={() => loadUsers(true)}
-                disabled={isRefreshing}
-            >
-                {isRefreshing ? "Refreshing..." : "Refresh users"}
-            </button>
-            <input
-                type="text"
-                placeholder="Search users..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="user-search"
-            />
+    return (
+        <>
+            {/* Horizontal toolbar beside the userbar, below the navbar */}
+            <div className="userbar-toolbar">
+                <NavLink
+                    to="/users"
+                    end
+                    className={({ isActive }) =>
+                        `icon-btn home-btn${isActive && !userId ? " active" : ""}`
+                    }
+                    title="Home"
+                >
+                    <img src={homeIcon} alt="Home" />
+                </NavLink>
 
-            <select
-                value={sort}
-                onChange={e => setSort(e.target.value)}
-                className="user-sort"
-            >
-                <option value="none">None</option>
-                <option value="az">A → Z</option>
-                <option value="za">Z → A</option>
-            </select>
+                <button
+                    type="button"
+                    className={`icon-btn refresh-btn ${isRefreshing ? "spinning" : ""}`}
+                    onClick={() => loadUsers(true)}
+                    disabled={isRefreshing}
+                    title="Refresh users"
+                >
+                    <img src={refreshIcon} alt="Refresh" />
+                </button>
 
-            <div className="user-links">
-                {filteredUsers.map(id => (
-                    <NavLink key={id} to={id}>
-                        {id}
-                    </NavLink>
-                ))}
+                <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="user-search"
+                />
+
+                <button
+                    type="button"
+                    className="sort-toggle"
+                    onClick={() => setSort(s => s === "az" ? "za" : "az")}
+                    title="Toggle sort order"
+                >
+                    {sort === "az" ? "A → Z" : "Z → A"}
+                </button>
             </div>
-        </nav>
+
+            {/* Vertical user list */}
+            <nav className="userbar">
+                <div className="user-links">
+                    {filteredUsers.map((id, index) => (
+                        <NavLink
+                            key={id}
+                            to={id}
+                            className={({ isActive }) =>
+                                [isActive ? "active" : "", index % 2 === 1 ? "alt-row" : ""].join(" ").trim()
+                            }
+                        >
+                            {id}
+                        </NavLink>
+                    ))}
+                </div>
+            </nav>
+        </>
     )
 }
 

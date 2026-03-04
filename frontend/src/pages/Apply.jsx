@@ -23,7 +23,6 @@ const INITIAL_FORM = {
     nicknames: "",
     description: "",
     pronouns: "",
-    gender: "",
     sexuality: "",
     age: "",
     birthday: "",
@@ -211,7 +210,6 @@ function Apply() {
             redditOldUsernames: formData.redditOldUsernames.trim(),
             description: formData.description.trim(),
             pronouns: formData.pronouns.trim(),
-            gender: formData.gender.trim(),
             sexuality: formData.sexuality.trim(),
             age: formData.age.trim(),
             birthday: formData.birthday.trim(),
@@ -464,16 +462,6 @@ function Apply() {
                                 value={formData.pronouns}
                                 onChange={updateField}
                                 placeholder="he/him, she/her, they/them..."
-                            />
-
-                            <label htmlFor="gender">Gender</label>
-                            <input
-                                id="gender"
-                                name="gender"
-                                type="text"
-                                value={formData.gender}
-                                onChange={updateField}
-                                placeholder="Optional"
                             />
 
                             <label htmlFor="sexuality">Sexuality</label>

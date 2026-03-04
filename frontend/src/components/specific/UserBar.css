@@ -1,3 +1,99 @@
+/* ─── Horizontal toolbar ────────────────────────────────────────────────────── */
+.userbar-toolbar {
+    position: fixed;
+    top: var(--navbar-height);
+    left: var(--userbar-width);
+    right: 0;
+    height: var(--toolbar-height, 44px);
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+
+    background-image: linear-gradient(
+        45deg,
+        var(--navbar-background-color-main),
+        var(--navbar-background-color-secondary)
+    );
+
+    border-bottom: 2px solid var(--border-color-main);
+    z-index: 998;
+
+    .user-search {
+        flex: 1 1 0;
+        min-width: 0;
+        height: 32px;
+        padding: 0 8px;
+        background-color: var(--navbar-background-color-main);
+        color: var(--navbar-link-font-color);
+        border: 1px solid var(--border-color-main);
+        font-size: var(--note-font-size);
+        outline: none;
+
+        &:focus {
+            border-color: var(--navbar-link-active-color, #fff);
+        }
+    }
+
+    .icon-btn {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--navbar-background-color-main);
+        border: 1px solid var(--border-color-main);
+        color: var(--navbar-link-font-color);
+        text-decoration: none;
+        cursor: pointer;
+        padding: 0;
+
+        img {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            filter: var(--icon-filter, none);
+        }
+
+        &:hover:not(:disabled):not(.active) {
+            background-color: var(--navbar-link-hover-color);
+        }
+
+        &.active {
+            background-color: var(--navbar-link-active-color);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+    }
+
+    .refresh-btn.spinning img {
+        animation: spin 0.8s linear infinite;
+    }
+
+    .sort-toggle {
+        flex-shrink: 0;
+        height: 32px;
+        padding: 0 10px;
+        background-color: var(--navbar-background-color-main);
+        color: var(--navbar-link-font-color);
+        border: 1px solid var(--border-color-main);
+        font-size: var(--note-font-size);
+        white-space: nowrap;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--navbar-link-hover-color);
+        }
+    }
+}
+
+/* ─── Vertical user list ─────────────────────────────────────────────────────── */
 .userbar {
     width: var(--userbar-width);
     height: calc(100vh - var(--navbar-height));
@@ -5,7 +101,6 @@
     left: 0;
 
     overflow-y: scroll;
-
     position: fixed;
 
     background-image: linear-gradient(
@@ -19,61 +114,11 @@
     align-items: stretch;
 
     border-right: 2px solid var(--border-color-main);
-
     z-index: 999;
 
-    > a {
-        background-color: var(--navbar-background-color-main);
-        color: var(--navbar-link-font-color);
-        text-align: center;
-
-        border: 1px solid var(--border-color-main);
-
-        text-decoration: none;
-
-        &:hover:not(.active) {
-            background-color: var(--navbar-link-hover-color);
-        }
-    }
-
-    > button {
-        background-color: var(--navbar-background-color-main);
-        color: var(--navbar-link-font-color);
-        text-align: center;
-        border: 1px solid var(--border-color-main);
-        cursor: pointer;
-        padding: 8px 10px;
-
-        &:hover:not(:disabled) {
-            background-color: var(--navbar-link-hover-color);
-        }
-
-        &:disabled {
-            opacity: 0.75;
-            cursor: default;
-        }
-    }
-
-    input {
-        background-color: var(--navbar-background-color-main);
-        color: var(--navbar-link-font-color);
-
-        border: 1px solid var(--border-color-main);
-    }
-
-    select {
-        background-color: var(--navbar-background-color-main);
-        color: var(--navbar-link-font-color);
-        text-align: center;
-
-        border: 1px solid var(--border-color-main);
-    }
-
     .user-links {
-        z-index: 998;
         display: flex;
         flex-direction: column;
-
         width: 100%;
 
         a {
@@ -81,14 +126,19 @@
             height: clamp(50px, 15vw, 100px);
             color: var(--navbar-link-font-color);
             text-decoration: none;
-
             font-size: var(--paragraph-font-size);
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             padding: 0 var(--navbar-link-gap);
+
+            /* Even rows: base background (from the gradient, transparent) */
+            background-color: transparent;
+
+            /* Odd rows: very slightly brighter */
+            &.alt-row {
+                background-color: rgba(255, 255, 255, 0.04);
+            }
 
             &.active {
                 background-color: var(--navbar-link-active-color);
@@ -99,4 +149,9 @@
             }
         }
     }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }

@@ -829,7 +829,6 @@ function validateAndNormalizeSubmission(payload, now) {
     extraDetails: readText(payload, "extraDetails", { required: false, max: 4000 }) || null,
     details: {
       pronouns: readText(payload, "pronouns", { required: false, max: 80 }) || null,
-      gender: readText(payload, "gender", { required: false, max: 80 }) || null,
       sexuality: readText(payload, "sexuality", { required: false, max: 80 }) || null,
       age,
       birthday: readText(payload, "birthday", { required: false, max: 120 }) || null
@@ -860,7 +859,6 @@ async function upsertUserFromSubmission(env, submission, requestedSlug, now) {
 
   const noteParts = []
   if (payload.extraDetails) noteParts.push(payload.extraDetails)
-  if (payload?.details?.gender) noteParts.push(`Gender: ${payload.details.gender}`)
 
   const ageValue = payload?.details?.age ?? null
   const ageTimestamp = ageValue === null ? null : now
