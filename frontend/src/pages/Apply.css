@@ -1,7 +1,7 @@
 .apply-page {
     display: flex;
     justify-content: center;
-    padding: var(--main-gap-size) 0;
+    padding: var(--main-gap-size);
 }
 
 .apply-card {
