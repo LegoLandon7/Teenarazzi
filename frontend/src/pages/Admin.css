@@ -180,6 +180,19 @@
   gap: 4px;
 }
 
+.admin-list-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-list-item-subtext {
+  opacity: 0.82;
+  font-size: clamp(11px, 1.2vw, 13px);
+}
+
 .admin-list-item.selected {
   border-color: var(--main-color);
   background-color: rgba(0, 170, 45, 0.2);
@@ -232,10 +245,105 @@
   margin: 0;
 }
 
+.admin-request-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-request-badge {
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: clamp(10px, 1.15vw, 12px);
+  border: 1px solid transparent;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-request-badge-application {
+  border-color: rgba(90, 180, 255, 0.5);
+  background: rgba(35, 110, 200, 0.2);
+}
+
+.admin-request-badge-edit {
+  border-color: rgba(70, 220, 120, 0.5);
+  background: rgba(0, 130, 50, 0.2);
+}
+
 .admin-detail p {
   margin: 0;
   font-size: var(--paragraph-font-size);
   line-height: 1.4;
+}
+
+.admin-change-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-change-item {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-change-item h3 {
+  margin: 0;
+  font-size: clamp(13px, 1.4vw, 16px);
+}
+
+.admin-change-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-change-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admin-change-grid span {
+  font-size: clamp(11px, 1.2vw, 13px);
+  opacity: 0.85;
+}
+
+.admin-change-grid pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 7px 8px;
+  font-family: inherit;
+  min-height: 34px;
+}
+
+.admin-edit-reason {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-edit-reason strong {
+  font-size: clamp(12px, 1.35vw, 14px);
+}
+
+.admin-inline-note {
+  opacity: 0.9;
 }
 
 .admin-user-editor-header {
@@ -397,6 +505,10 @@
 
   .admin-readonly-grid,
   .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-change-grid {
     grid-template-columns: 1fr;
   }
 }

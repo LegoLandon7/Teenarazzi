@@ -15,6 +15,9 @@ const REDDIT_ACTIVITY_CACHE_KEY = "stats:reddit:weekly-active:v1"
 const REDDIT_ACTIVITY_REFRESH_SECONDS = 12 * 60 * 60
 const STATUS_VALUES = new Set(["pending", "approved", "rejected", "spam"])
 const COMMUNITY_VALUES = new Set(["discord", "reddit", "both"])
+const SUBMISSION_REQUEST_TYPE_APPLICATION = "application"
+const SUBMISSION_REQUEST_TYPE_EDIT = "edit"
+const EDIT_REQUEST_MAX_CHANGED_FIELDS = 30
 const SESSION_COOKIE_NAME = "trz_admin_session"
 const SESSION_TTL_SECONDS = 8 * 60 * 60
 const DEFAULT_DISCORD_GUILD_ID = "1395741172256739348"
@@ -175,6 +178,7 @@ async function handleCreateSubmission(req, env, cors) {
   const requestPayload = await parseRequestJson(req)
   const now = unixNow()
   const normalized = validateAndNormalizeSubmission(requestPayload, now)
+  const requestType = normalizeSubmissionRequestType(normalized?.requestType)
 
   const ipHash = await hashIp(req, env)
   const rateLimit = toPositiveInt(env.RATE_LIMIT_PER_HOUR, DEFAULT_RATE_LIMIT_PER_HOUR)
@@ -182,15 +186,17 @@ async function handleCreateSubmission(req, env, cors) {
 
   let turnstilePassed = 0
   const turnstileSecret = (env.TURNSTILE_SECRET_KEY || "").trim()
-  if (turnstileSecret) {
+  if (turnstileSecret && requestType === SUBMISSION_REQUEST_TYPE_APPLICATION) {
     const token = readText(requestPayload, "turnstileToken", { required: true, max: 2048 })
     const passed = await verifyTurnstile(token, req, turnstileSecret)
     if (!passed) throw new HttpError(400, "Turnstile verification failed")
     turnstilePassed = 1
   }
 
-  const avatars = await fetchSubmissionAvatars(env, normalized)
-  normalized.avatars = avatars
+  if (requestType === SUBMISSION_REQUEST_TYPE_APPLICATION) {
+    const avatars = await fetchSubmissionAvatars(env, normalized)
+    normalized.avatars = avatars
+  }
 
   const submissionId = crypto.randomUUID()
   await env.DB.prepare(
@@ -445,7 +451,7 @@ async function handleAdminListSubmissions(req, env, cors) {
   let statement
   if (status === "all") {
     statement = env.DB.prepare(
-      `SELECT id, status, display_name, active_community, created_at, updated_at, origin
+      `SELECT id, status, display_name, active_community, created_at, updated_at, origin, payload_json
        FROM submissions
        ORDER BY created_at DESC
        LIMIT ?1 OFFSET ?2`
@@ -453,7 +459,7 @@ async function handleAdminListSubmissions(req, env, cors) {
   } else {
     if (!STATUS_VALUES.has(status)) throw new HttpError(400, "Invalid status filter")
     statement = env.DB.prepare(
-      `SELECT id, status, display_name, active_community, created_at, updated_at, origin
+      `SELECT id, status, display_name, active_community, created_at, updated_at, origin, payload_json
        FROM submissions
        WHERE status = ?1
        ORDER BY created_at DESC
@@ -462,7 +468,8 @@ async function handleAdminListSubmissions(req, env, cors) {
   }
 
   const { results } = await statement.all()
-  return jsonResponse({ submissions: results || [] }, 200, cors)
+  const submissions = (results || []).map(formatAdminSubmissionRow)
+  return jsonResponse({ submissions }, 200, cors)
 }
 
 async function handleAdminGetSubmission(env, submissionId, cors) {
@@ -475,12 +482,17 @@ async function handleAdminGetSubmission(env, submissionId, cors) {
     .first()
 
   if (!row) throw new HttpError(404, "Submission not found")
+  const parsedPayload = safeJsonParse(row.payload_json)
+  const summary = summarizeSubmissionPayload(parsedPayload)
 
   return jsonResponse(
     {
       submission: {
         ...row,
-        payload: safeJsonParse(row.payload_json)
+        payload: parsedPayload,
+        request_type: summary.requestType,
+        changed_fields_count: summary.changedFieldsCount,
+        target_user_slug: summary.targetUserSlug
       }
     },
     200,
@@ -509,8 +521,14 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
   const requestedSlug = readText(payload, "slug", { required: false, max: 120 })
   const now = unixNow()
 
-  let nextPayload = safeJsonParse(existing.payload_json)
+  const existingPayload = safeJsonParse(existing.payload_json)
+  const existingRequestType = normalizeSubmissionRequestType(existingPayload?.requestType)
+  let nextPayload = existingPayload
   if (payload.submissionData !== undefined) {
+    if (existingRequestType === SUBMISSION_REQUEST_TYPE_EDIT) {
+      throw new HttpError(400, "Edit requests cannot update submissionData")
+    }
+
     const submissionData = payload.submissionData
     if (!submissionData || typeof submissionData !== "object" || Array.isArray(submissionData)) {
       throw new HttpError(400, "submissionData must be a JSON object")
@@ -531,10 +549,14 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
       mergedSubmissionData,
       Number(existing.created_at) || now
     )
+    if (normalizeSubmissionRequestType(normalized?.requestType) !== SUBMISSION_REQUEST_TYPE_APPLICATION) {
+      throw new HttpError(400, "submissionData update must remain an application request")
+    }
     normalized.avatars = await fetchSubmissionAvatars(env, normalized)
     nextPayload = normalized
   }
 
+  const nextRequestType = normalizeSubmissionRequestType(nextPayload?.requestType)
   const payloadDisplayName = typeof nextPayload?.displayName === "string"
     ? nextPayload.displayName.trim()
     : ""
@@ -581,7 +603,11 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
   }
 
   let createdUserSlug = null
-  if (status === "approved" && promoteToUsers) {
+  if (
+    status === "approved"
+    && promoteToUsers
+    && nextRequestType === SUBMISSION_REQUEST_TYPE_APPLICATION
+  ) {
     createdUserSlug = await upsertUserFromSubmission(env, updatedSubmission, requestedSlug, now)
   }
 
@@ -590,7 +616,8 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
       ok: true,
       id: submissionId,
       status,
-      userSlug: createdUserSlug
+      userSlug: createdUserSlug,
+      requestType: nextRequestType
     },
     200,
     cors
@@ -773,7 +800,65 @@ async function handleAdminExportUsers(env, cors) {
   return jsonResponse({ users }, 200, cors)
 }
 
+function normalizeSubmissionRequestType(value) {
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : ""
+  if (normalized === SUBMISSION_REQUEST_TYPE_EDIT || normalized === "edit_request") {
+    return SUBMISSION_REQUEST_TYPE_EDIT
+  }
+  return SUBMISSION_REQUEST_TYPE_APPLICATION
+}
+
+function summarizeSubmissionPayload(payload) {
+  const requestType = normalizeSubmissionRequestType(payload?.requestType)
+  if (requestType !== SUBMISSION_REQUEST_TYPE_EDIT) {
+    return {
+      requestType,
+      changedFieldsCount: 0,
+      targetUserSlug: null
+    }
+  }
+
+  const changedFieldsCount = Array.isArray(payload?.changedFields)
+    ? payload.changedFields.length
+    : 0
+  const targetUserSlug = typeof payload?.targetUser?.slug === "string"
+    ? payload.targetUser.slug.trim()
+    : ""
+
+  return {
+    requestType,
+    changedFieldsCount,
+    targetUserSlug: targetUserSlug || null
+  }
+}
+
+function formatAdminSubmissionRow(row) {
+  const parsedPayload = safeJsonParse(row.payload_json)
+  const summary = summarizeSubmissionPayload(parsedPayload)
+
+  return {
+    id: row.id,
+    status: row.status,
+    display_name: row.display_name,
+    active_community: row.active_community,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    origin: row.origin,
+    request_type: summary.requestType,
+    changed_fields_count: summary.changedFieldsCount,
+    target_user_slug: summary.targetUserSlug
+  }
+}
+
 function validateAndNormalizeSubmission(payload, now) {
+  const requestType = normalizeSubmissionRequestType(payload?.requestType)
+  if (requestType === SUBMISSION_REQUEST_TYPE_EDIT) {
+    return validateAndNormalizeEditSubmission(payload, now)
+  }
+  return validateAndNormalizeApplicationSubmission(payload, now)
+}
+
+function validateAndNormalizeApplicationSubmission(payload, now) {
   const displayName = readText(payload, "displayName", { required: true, max: 80 })
   const activeCommunity = readText(payload, "activeCommunity", { required: true, max: 12 })
   if (!COMMUNITY_VALUES.has(activeCommunity)) {
@@ -812,6 +897,7 @@ function validateAndNormalizeSubmission(payload, now) {
   }
 
   return {
+    requestType: SUBMISSION_REQUEST_TYPE_APPLICATION,
     displayName,
     activeCommunity,
     nicknames: parseCsv(readText(payload, "nicknames", { required: false, max: 300 }), 20, 60),
@@ -836,6 +922,104 @@ function validateAndNormalizeSubmission(payload, now) {
     middyGoat,
     submittedAt: now
   }
+}
+
+function validateAndNormalizeEditSubmission(payload, now) {
+  if (readText(payload, "website", { required: false, max: 300 })) {
+    throw new HttpError(400, "Spam detected")
+  }
+
+  const targetUserSlug = normalizeTargetUserSlug(
+    readText(payload, "targetUserSlug", { required: true, max: 120 })
+  )
+  const targetDisplayName = readText(payload, "targetDisplayName", { required: false, max: 80 })
+    || readText(payload, "displayName", { required: true, max: 80 })
+  const activeCommunityRaw = readText(payload, "activeCommunity", { required: false, max: 12 }).toLowerCase()
+  const activeCommunity = COMMUNITY_VALUES.has(activeCommunityRaw) ? activeCommunityRaw : "both"
+
+  const changedFields = payload?.changedFields
+  if (!Array.isArray(changedFields)) {
+    throw new HttpError(400, "changedFields must be an array")
+  }
+  if (changedFields.length === 0) {
+    throw new HttpError(400, "At least one changed field is required")
+  }
+  if (changedFields.length > EDIT_REQUEST_MAX_CHANGED_FIELDS) {
+    throw new HttpError(400, "Too many changed fields")
+  }
+
+  const seenFields = new Set()
+  const normalizedChanges = []
+  for (let index = 0; index < changedFields.length; index += 1) {
+    const change = changedFields[index]
+    if (!change || typeof change !== "object" || Array.isArray(change)) {
+      throw new HttpError(400, `changedFields[${index}] must be an object`)
+    }
+
+    const field = readText(change, "field", { required: true, max: 80 })
+    const fieldKey = field.toLowerCase()
+    if (seenFields.has(fieldKey)) continue
+
+    const label = readText(change, "label", { required: false, max: 120 }) || field
+    const from = normalizeEditChangeValue(change.from, `changedFields[${index}].from`)
+    const to = normalizeEditChangeValue(change.to, `changedFields[${index}].to`)
+    if (from === to) continue
+
+    seenFields.add(fieldKey)
+    normalizedChanges.push({
+      field,
+      label,
+      from,
+      to
+    })
+  }
+
+  if (normalizedChanges.length === 0) {
+    throw new HttpError(400, "No valid changed fields were provided")
+  }
+
+  return {
+    requestType: SUBMISSION_REQUEST_TYPE_EDIT,
+    displayName: targetDisplayName,
+    activeCommunity,
+    description: `Edit request for ${targetUserSlug}`,
+    extraDetails: readText(payload, "extraDetails", { required: false, max: 4000 }) || null,
+    targetUser: {
+      slug: targetUserSlug,
+      displayName: targetDisplayName
+    },
+    changedFields: normalizedChanges,
+    middyGoat: "yes",
+    submittedAt: now
+  }
+}
+
+function normalizeTargetUserSlug(input) {
+  const normalized = (input || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9._-]/g, "")
+  if (!normalized) throw new HttpError(400, "targetUserSlug is invalid")
+  return normalized
+}
+
+function normalizeEditChangeValue(value, fieldName) {
+  if (value === null || value === undefined) return ""
+
+  let normalizedValue = ""
+  if (typeof value === "string") {
+    normalizedValue = value.trim()
+  } else if (typeof value === "number" || typeof value === "boolean") {
+    normalizedValue = String(value)
+  } else {
+    throw new HttpError(400, `${fieldName} must be a string`)
+  }
+
+  if (normalizedValue.length > 4000) {
+    throw new HttpError(400, `${fieldName} is too long`)
+  }
+  return normalizedValue
 }
 
 async function upsertUserFromSubmission(env, submission, requestedSlug, now) {

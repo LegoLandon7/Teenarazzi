@@ -73,6 +73,14 @@
     gap: 12px;
 }
 
+.user-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .user-card h2 {
     margin: 0;
     font-size: var(--small-header-font-size);
@@ -261,6 +269,126 @@
     filter: brightness(1.12);
 }
 
+.user-edit-toggle-button {
+    border: 1px solid rgba(70, 220, 120, 0.45);
+    border-radius: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 130, 50, 0.2);
+    color: var(--basic-font-color);
+    font-size: clamp(11px, 1.3vw, 14px);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.user-edit-toggle-button:disabled {
+    opacity: 0.72;
+    cursor: default;
+}
+
+.user-edit-toggle-button:hover:not(:disabled) {
+    filter: brightness(1.12);
+}
+
+.user-edit-form {
+    margin-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.user-edit-hint {
+    opacity: 0.85;
+}
+
+.user-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.user-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.user-edit-field span {
+    font-size: clamp(11px, 1.35vw, 14px);
+    opacity: 0.9;
+}
+
+.user-edit-field input,
+.user-edit-field textarea {
+    border: 1px solid var(--border-color-main);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.22);
+    color: var(--basic-font-color);
+    padding: 9px 10px;
+    font-size: clamp(12px, 1.3vw, 14px);
+}
+
+.user-edit-field textarea {
+    resize: vertical;
+}
+
+.user-edit-field-wide {
+    grid-column: 1 / -1;
+}
+
+.user-edit-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 10px;
+}
+
+.user-edit-actions span {
+    font-size: clamp(11px, 1.25vw, 14px);
+    opacity: 0.9;
+}
+
+.user-edit-actions-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.user-edit-actions-buttons button {
+    border: 1px solid var(--border-color-main);
+    border-radius: 8px;
+    padding: 7px 11px;
+    background: rgba(0, 0, 0, 0.22);
+    color: var(--basic-font-color);
+    cursor: pointer;
+}
+
+.user-edit-actions-buttons button:disabled {
+    opacity: 0.72;
+    cursor: default;
+}
+
+.user-edit-message {
+    margin-top: 12px !important;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.user-edit-error {
+    border: 1px solid rgba(255, 120, 120, 0.45);
+    background: rgba(185, 60, 60, 0.2);
+}
+
+.user-edit-success {
+    border: 1px solid rgba(70, 220, 120, 0.45);
+    background: rgba(0, 130, 50, 0.2);
+}
+
 @media screen and (max-width: 1024px) {
     .user-layout {
         grid-template-columns: 1fr;
@@ -277,5 +405,9 @@
 
     .user-card-title-row {
         flex-wrap: wrap;
+    }
+
+    .user-edit-grid {
+        grid-template-columns: 1fr;
     }
 }
