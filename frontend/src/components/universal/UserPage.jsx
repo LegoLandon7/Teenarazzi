@@ -647,7 +647,6 @@ function UserPage() {
                             </div>
                         </div>
                         <hr />
-                        <h2>About</h2>
                         <p>{user.description}</p>
 
                         {isEditOpen && (
