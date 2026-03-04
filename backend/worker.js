@@ -517,7 +517,6 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
 
   const reviewNote = readText(payload, "reviewNote", { required: false, max: 1000 }) || null
   const reviewedBy = readText(payload, "reviewedBy", { required: false, max: 80 }) || admin.actor
-  const promoteToUsers = Boolean(payload.promoteToUsers)
   const requestedSlug = readText(payload, "slug", { required: false, max: 120 })
   const now = unixNow()
 
@@ -603,12 +602,12 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
   }
 
   let createdUserSlug = null
-  if (
-    status === "approved"
-    && promoteToUsers
-    && nextRequestType === SUBMISSION_REQUEST_TYPE_APPLICATION
-  ) {
-    createdUserSlug = await upsertUserFromSubmission(env, updatedSubmission, requestedSlug, now)
+  if (status === "approved") {
+    if (nextRequestType === SUBMISSION_REQUEST_TYPE_APPLICATION) {
+      createdUserSlug = await upsertUserFromSubmission(env, updatedSubmission, requestedSlug, now)
+    } else if (nextRequestType === SUBMISSION_REQUEST_TYPE_EDIT) {
+      createdUserSlug = await upsertUserFromEditSubmission(env, updatedSubmission, now)
+    }
   }
 
   return jsonResponse(
@@ -1020,6 +1019,255 @@ function normalizeEditChangeValue(value, fieldName) {
     throw new HttpError(400, `${fieldName} is too long`)
   }
   return normalizedValue
+}
+
+function normalizeExistingStringList(list, maxItems, maxItemLength) {
+  if (!Array.isArray(list)) return []
+
+  const seen = new Set()
+  const result = []
+  for (const value of list) {
+    if (typeof value !== "string") continue
+    const cleaned = value.trim()
+    if (!cleaned || cleaned.length > maxItemLength) continue
+
+    const key = cleaned.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(cleaned)
+
+    if (result.length >= maxItems) break
+  }
+  return result
+}
+
+function getHistoricalUsernames(list, maxItems, maxItemLength) {
+  if (!Array.isArray(list)) return []
+  return normalizeExistingStringList(list.slice(1), maxItems, maxItemLength)
+}
+
+function ensureUserJsonBaseShape(existingUserJson, displayName, now) {
+  const nextUser = (
+    existingUserJson
+    && typeof existingUserJson === "object"
+    && !Array.isArray(existingUserJson)
+  )
+    ? structuredClone(existingUserJson)
+    : {}
+
+  const resolvedAvatars = resolveUserAvatars(nextUser)
+  const discordCurrent = getPrimaryUsername(nextUser?.usernames?.discord)
+  const redditCurrent = getPrimaryUsername(nextUser?.usernames?.reddit)
+  const discordOld = getHistoricalUsernames(nextUser?.usernames?.discord, 20, 80)
+  const redditOld = getHistoricalUsernames(nextUser?.usernames?.reddit, 20, 80)
+  const nicknames = normalizeExistingStringList(nextUser?.nicknames, 20, 60)
+
+  const normalizedDisplayName = cleanUrl(displayName)
+  nextUser.id = cleanUrl(nextUser.id) || normalizedDisplayName || "Unknown User"
+  nextUser.description = typeof nextUser.description === "string" ? nextUser.description : ""
+  nextUser.notes = typeof nextUser.notes === "string" && nextUser.notes.trim() ? nextUser.notes.trim() : null
+  nextUser.usernames = {
+    discord: discordCurrent ? [discordCurrent, ...discordOld] : (discordOld.length > 0 ? [null, ...discordOld] : [null]),
+    reddit: redditCurrent ? [redditCurrent, ...redditOld] : (redditOld.length > 0 ? [null, ...redditOld] : [null])
+  }
+  nextUser.nicknames = nicknames.length > 0 ? nicknames : [null]
+  nextUser.pronouns = typeof nextUser.pronouns === "string" && nextUser.pronouns.trim()
+    ? nextUser.pronouns.trim()
+    : null
+  nextUser.sexuality = typeof nextUser.sexuality === "string" && nextUser.sexuality.trim()
+    ? nextUser.sexuality.trim()
+    : null
+  nextUser.birthday = typeof nextUser.birthday === "string" && nextUser.birthday.trim()
+    ? nextUser.birthday.trim()
+    : null
+
+  const parsedAge = Number(nextUser?.age?.value)
+  const ageValue = Number.isFinite(parsedAge) && parsedAge >= 0 && parsedAge <= 120
+    ? Math.floor(parsedAge)
+    : null
+  const parsedAgeTimestamp = Number(nextUser?.age?.timestamp)
+  nextUser.age = {
+    value: ageValue,
+    timestamp: ageValue === null
+      ? null
+      : (Number.isFinite(parsedAgeTimestamp) && parsedAgeTimestamp > 0
+        ? Math.floor(parsedAgeTimestamp)
+        : now)
+  }
+
+  nextUser.avatars = {
+    discord: cleanUrl(nextUser?.avatars?.discord) || resolvedAvatars.discord || null,
+    reddit: cleanUrl(nextUser?.avatars?.reddit) || resolvedAvatars.reddit || null
+  }
+  nextUser.avatarUrl = cleanUrl(nextUser.avatarUrl)
+    || nextUser.avatars.discord
+    || nextUser.avatars.reddit
+    || DEFAULT_AVATAR_URL
+  nextUser.timestamp = now
+
+  return nextUser
+}
+
+function applyCurrentUsernameChange(list, nextCurrent, maxItems, maxItemLength) {
+  const old = getHistoricalUsernames(list, maxItems, maxItemLength)
+  if (nextCurrent) return [nextCurrent, ...old]
+  return old.length > 0 ? [null, ...old] : [null]
+}
+
+function applyOldUsernamesChange(list, nextOldValues) {
+  const current = getPrimaryUsername(list)
+  if (current) return [current, ...nextOldValues]
+  return nextOldValues.length > 0 ? [null, ...nextOldValues] : [null]
+}
+
+function parseAgeFromEditField(value) {
+  if (!value) return null
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 120) {
+    throw new HttpError(400, "Age must be between 0 and 120")
+  }
+  return Math.floor(parsed)
+}
+
+async function upsertUserFromEditSubmission(env, submission, now) {
+  const payload = safeJsonParse(submission.payload_json)
+  if (!payload || typeof payload !== "object") {
+    throw new HttpError(500, "Invalid edit submission payload")
+  }
+
+  const targetSlugRaw = typeof payload?.targetUser?.slug === "string"
+    ? payload.targetUser.slug
+    : ""
+  const targetSlug = normalizeTargetUserSlug(targetSlugRaw)
+  const targetDisplayName = cleanUrl(payload?.targetUser?.displayName)
+    || cleanUrl(payload?.displayName)
+    || submission.display_name
+    || targetSlug
+
+  const existingRow = await env.DB.prepare(
+    "SELECT user_id, user_json FROM users WHERE slug = ?1 LIMIT 1"
+  )
+    .bind(targetSlug)
+    .first()
+  const existingUser = safeJsonParse(existingRow?.user_json)
+  const userJson = ensureUserJsonBaseShape(existingUser, targetDisplayName, now)
+  const changedFields = Array.isArray(payload.changedFields) ? payload.changedFields : []
+
+  let shouldRefreshAvatars = false
+  for (let index = 0; index < changedFields.length; index += 1) {
+    const change = changedFields[index]
+    if (!change || typeof change !== "object" || Array.isArray(change)) continue
+
+    const field = cleanUrl(change.field).toLowerCase()
+    const toValue = normalizeEditChangeValue(change.to, `changedFields[${index}].to`)
+
+    switch (field) {
+      case "displayname":
+        if (toValue) userJson.id = toValue
+        break
+
+      case "description":
+        userJson.description = toValue
+        break
+
+      case "notes":
+        userJson.notes = toValue || null
+        break
+
+      case "discordcurrent":
+        userJson.usernames.discord = applyCurrentUsernameChange(
+          userJson?.usernames?.discord,
+          toValue,
+          20,
+          80
+        )
+        shouldRefreshAvatars = true
+        break
+
+      case "discordold":
+        userJson.usernames.discord = applyOldUsernamesChange(
+          userJson?.usernames?.discord,
+          parseCsv(toValue, 20, 80)
+        )
+        break
+
+      case "redditcurrent":
+        userJson.usernames.reddit = applyCurrentUsernameChange(
+          userJson?.usernames?.reddit,
+          toValue,
+          20,
+          80
+        )
+        shouldRefreshAvatars = true
+        break
+
+      case "redditold":
+        userJson.usernames.reddit = applyOldUsernamesChange(
+          userJson?.usernames?.reddit,
+          parseCsv(toValue, 20, 80)
+        )
+        break
+
+      case "nicknames": {
+        const nicknames = parseCsv(toValue, 20, 60)
+        userJson.nicknames = nicknames.length > 0 ? nicknames : [null]
+        break
+      }
+
+      case "pronouns":
+        userJson.pronouns = toValue || null
+        break
+
+      case "sexuality":
+        userJson.sexuality = toValue || null
+        break
+
+      case "age": {
+        const ageValue = parseAgeFromEditField(toValue)
+        userJson.age = {
+          value: ageValue,
+          timestamp: ageValue === null ? null : now
+        }
+        break
+      }
+
+      case "birthday":
+        userJson.birthday = toValue || null
+        break
+
+      default:
+        // Ignore unknown fields to keep edit requests forward-compatible.
+        break
+    }
+  }
+
+  userJson.id = cleanUrl(userJson.id) || targetDisplayName || targetSlug
+  userJson.timestamp = now
+
+  await enrichUserJsonWithAvatars(env, userJson, {
+    force: shouldRefreshAvatars,
+    now
+  })
+
+  await env.DB.prepare(
+    `INSERT INTO users (slug, user_id, user_json, source, created_at, updated_at)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?5)
+      ON CONFLICT(slug) DO UPDATE SET
+        user_id = excluded.user_id,
+        user_json = excluded.user_json,
+        source = excluded.source,
+        updated_at = excluded.updated_at`
+  )
+    .bind(
+      targetSlug,
+      userJson.id,
+      JSON.stringify(userJson),
+      `submission:${submission.id}:edit`,
+      now
+    )
+    .run()
+
+  return targetSlug
 }
 
 async function upsertUserFromSubmission(env, submission, requestedSlug, now) {

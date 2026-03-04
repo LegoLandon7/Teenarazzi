@@ -327,7 +327,6 @@ function Admin() {
   const [submissionForm, setSubmissionForm] = useState(EMPTY_SUBMISSION_FORM)
   const [reviewNote, setReviewNote] = useState("")
   const [slugOverride, setSlugOverride] = useState("")
-  const [promoteToUsers, setPromoteToUsers] = useState(true)
   const [queueMessage, setQueueMessage] = useState("")
   const [queueError, setQueueError] = useState("")
   const [queueLoading, setQueueLoading] = useState(false)
@@ -440,7 +439,6 @@ function Admin() {
           ? EMPTY_SUBMISSION_FORM
           : submissionPayloadToForm(submission?.payload)
       )
-      setPromoteToUsers(requestType === "edit" ? false : true)
       setReviewNote(submission?.review_note || "")
       setSlugOverride("")
       setQueueError("")
@@ -587,12 +585,6 @@ function Admin() {
         status,
         reviewNote,
         slug: isEditRequest ? undefined : (slugOverride || undefined),
-        promoteToUsers: (
-          status === "approved"
-          && !isEditRequest
-          ? promoteToUsers
-          : false
-        ),
         reviewedBy: "admin-ui"
       }
 
@@ -1088,22 +1080,7 @@ function Admin() {
                         onChange={event => setSlugOverride(event.target.value)}
                         placeholder="example_user"
                       />
-
-                      <label className="admin-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={promoteToUsers}
-                          onChange={event => setPromoteToUsers(event.target.checked)}
-                        />
-                        Promote approved submission into users
-                      </label>
                     </>
-                  )}
-
-                  {selectedIsEditRequest && (
-                    <p className="admin-inline-note">
-                      Edit requests stay in the inbox and are not auto-promoted to users.
-                    </p>
                   )}
 
                   <div className="admin-actions">
