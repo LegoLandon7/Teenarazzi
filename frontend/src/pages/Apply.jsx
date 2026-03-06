@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 
 import "../css/tools/flex-container.css"
 import "../css/tools/dividers.css"
 import "./Apply.css"
+import TurnstileWidget from "../components/tools/TurnstileWidget.jsx"
 import { apiUrl } from "../lib/api.js"
 
 const STEPS = [
@@ -32,20 +33,6 @@ const INITIAL_FORM = {
 }
 
 const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim()
-const TURNSTILE_SCRIPT_ID = "cf-turnstile-script"
-const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-
-function ensureTurnstileScript() {
-    if (typeof window === "undefined") return
-    if (document.getElementById(TURNSTILE_SCRIPT_ID)) return
-
-    const script = document.createElement("script")
-    script.id = TURNSTILE_SCRIPT_ID
-    script.src = TURNSTILE_SCRIPT_SRC
-    script.async = true
-    script.defer = true
-    document.head.appendChild(script)
-}
 
 function Apply() {
     const [formData, setFormData] = useState(INITIAL_FORM)
@@ -55,73 +42,15 @@ function Apply() {
     const [submissionId, setSubmissionId] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [turnstileToken, setTurnstileToken] = useState("")
-    const turnstileContainerRef = useRef(null)
-    const turnstileWidgetIdRef = useRef(null)
+    const [turnstileResetSignal, setTurnstileResetSignal] = useState(0)
 
     const isFinalStep = stepIndex === STEPS.length - 1
 
     const resetTurnstile = () => {
         if (!TURNSTILE_SITE_KEY) return
         setTurnstileToken("")
-
-        const widgetId = turnstileWidgetIdRef.current
-        if (widgetId === null || widgetId === undefined) return
-        if (!window.turnstile || typeof window.turnstile.reset !== "function") return
-
-        try {
-            window.turnstile.reset(widgetId)
-        } catch {
-            // Ignore widget reset errors and keep form usable.
-        }
+        setTurnstileResetSignal(prev => prev + 1)
     }
-
-    useEffect(() => {
-        if (!TURNSTILE_SITE_KEY) return
-
-        ensureTurnstileScript()
-        let cancelled = false
-
-        const tryRender = () => {
-            if (cancelled) return
-            if (turnstileWidgetIdRef.current !== null) return
-            if (!turnstileContainerRef.current) return
-            if (!window.turnstile || typeof window.turnstile.render !== "function") return
-
-            try {
-                turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
-                    sitekey: TURNSTILE_SITE_KEY,
-                    callback: token => setTurnstileToken(typeof token === "string" ? token : ""),
-                    "expired-callback": () => setTurnstileToken(""),
-                    "error-callback": () => setTurnstileToken("")
-                })
-            } catch {
-                // Ignore render errors and keep polling while script initializes.
-            }
-        }
-
-        const intervalId = setInterval(tryRender, 200)
-        tryRender()
-
-        return () => {
-            cancelled = true
-            clearInterval(intervalId)
-
-            const widgetId = turnstileWidgetIdRef.current
-            if (
-                widgetId !== null
-                && widgetId !== undefined
-                && window.turnstile
-                && typeof window.turnstile.remove === "function"
-            ) {
-                try {
-                    window.turnstile.remove(widgetId)
-                } catch {
-                    // Ignore widget remove errors during unmount.
-                }
-            }
-            turnstileWidgetIdRef.current = null
-        }
-    }, [])
 
     const updateField = (event) => {
         const { name, value } = event.target
@@ -525,7 +454,12 @@ function Apply() {
                             {TURNSTILE_SITE_KEY && (
                                 <div className="apply-turnstile">
                                     <label>Spam Check *</label>
-                                    <div ref={turnstileContainerRef} className="apply-turnstile-widget" />
+                                    <TurnstileWidget
+                                        className="apply-turnstile-widget"
+                                        onTokenChange={setTurnstileToken}
+                                        resetSignal={turnstileResetSignal}
+                                        siteKey={TURNSTILE_SITE_KEY}
+                                    />
                                 </div>
                             )}
                         </fieldset>

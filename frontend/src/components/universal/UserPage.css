@@ -337,6 +337,21 @@
     grid-column: 1 / -1;
 }
 
+.user-edit-turnstile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-edit-turnstile span {
+    font-size: clamp(11px, 1.35vw, 14px);
+    opacity: 0.9;
+}
+
+.user-edit-turnstile-widget {
+    min-height: 70px;
+}
+
 .user-edit-actions {
     display: flex;
     justify-content: space-between;

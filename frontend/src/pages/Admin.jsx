@@ -584,8 +584,7 @@ function Admin() {
       const requestBody = {
         status,
         reviewNote,
-        slug: isEditRequest ? undefined : (slugOverride || undefined),
-        reviewedBy: "admin-ui"
+        slug: isEditRequest ? undefined : (slugOverride || undefined)
       }
 
       if (!isEditRequest) {

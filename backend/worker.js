@@ -174,6 +174,7 @@ async function handleStats(env) {
 
 async function handleCreateSubmission(req, env, cors) {
   assertDb(env)
+  assertOriginAllowed(req, env)
 
   const requestPayload = await parseRequestJson(req)
   const now = unixNow()
@@ -186,7 +187,7 @@ async function handleCreateSubmission(req, env, cors) {
 
   let turnstilePassed = 0
   const turnstileSecret = (env.TURNSTILE_SECRET_KEY || "").trim()
-  if (turnstileSecret && requestType === SUBMISSION_REQUEST_TYPE_APPLICATION) {
+  if (turnstileSecret) {
     const token = readText(requestPayload, "turnstileToken", { required: true, max: 2048 })
     const passed = await verifyTurnstile(token, req, turnstileSecret)
     if (!passed) throw new HttpError(400, "Turnstile verification failed")
@@ -516,7 +517,7 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
   if (!STATUS_VALUES.has(status)) throw new HttpError(400, "Invalid status value")
 
   const reviewNote = readText(payload, "reviewNote", { required: false, max: 1000 }) || null
-  const reviewedBy = readText(payload, "reviewedBy", { required: false, max: 80 }) || admin.actor
+  const reviewedBy = admin.actor
   const requestedSlug = readText(payload, "slug", { required: false, max: 120 })
   const now = unixNow()
 
@@ -552,7 +553,7 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
       throw new HttpError(400, "submissionData update must remain an application request")
     }
     normalized.avatars = await fetchSubmissionAvatars(env, normalized)
-    nextPayload = normalized
+    nextPayload = preserveSubmissionApprovalMetadata(normalized, existingPayload)
   }
 
   const nextRequestType = normalizeSubmissionRequestType(nextPayload?.requestType)
@@ -566,9 +567,47 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
   const nextActiveCommunity = COMMUNITY_VALUES.has(payloadCommunity)
     ? payloadCommunity
     : existing.active_community
-  const nextPayloadJson = payload.submissionData !== undefined
+  let nextPayloadJson = payload.submissionData !== undefined
     ? JSON.stringify(nextPayload)
     : existing.payload_json
+  const linkedApplicationUserSlug = (
+    status === "approved"
+    && nextRequestType === SUBMISSION_REQUEST_TYPE_APPLICATION
+  )
+    ? await findLinkedApplicationUserSlug(env, {
+      ...existing,
+      payload_json: nextPayloadJson
+    }, {
+      requestedSlug
+    })
+    : ""
+
+  const nextSubmission = {
+    ...existing,
+    display_name: nextDisplayName,
+    active_community: nextActiveCommunity,
+    payload_json: nextPayloadJson
+  }
+
+  let createdUserSlug = null
+  if (status === "approved") {
+    if (nextRequestType === SUBMISSION_REQUEST_TYPE_APPLICATION) {
+      createdUserSlug = await upsertUserFromSubmission(
+        env,
+        nextSubmission,
+        {
+          requestedSlug,
+          fixedSlug: linkedApplicationUserSlug
+        },
+        now
+      )
+      nextPayload = withSubmissionApprovedUserSlug(nextPayload, createdUserSlug, now, admin.actor)
+      nextPayloadJson = JSON.stringify(nextPayload)
+      nextSubmission.payload_json = nextPayloadJson
+    } else if (nextRequestType === SUBMISSION_REQUEST_TYPE_EDIT) {
+      createdUserSlug = await upsertUserFromEditSubmission(env, nextSubmission, now)
+    }
+  }
 
   await env.DB.prepare(
     `UPDATE submissions
@@ -593,22 +632,6 @@ async function handleAdminPatchSubmission(req, env, submissionId, admin, cors) {
       submissionId
     )
     .run()
-
-  const updatedSubmission = {
-    ...existing,
-    display_name: nextDisplayName,
-    active_community: nextActiveCommunity,
-    payload_json: nextPayloadJson
-  }
-
-  let createdUserSlug = null
-  if (status === "approved") {
-    if (nextRequestType === SUBMISSION_REQUEST_TYPE_APPLICATION) {
-      createdUserSlug = await upsertUserFromSubmission(env, updatedSubmission, requestedSlug, now)
-    } else if (nextRequestType === SUBMISSION_REQUEST_TYPE_EDIT) {
-      createdUserSlug = await upsertUserFromEditSubmission(env, updatedSubmission, now)
-    }
-  }
 
   return jsonResponse(
     {
@@ -688,6 +711,12 @@ async function handleAdminUpsertUser(req, env, slug, admin, cors) {
   const userId = typeof user.id === "string" ? user.id.trim() : ""
   if (!userId) throw new HttpError(400, "user.id is required")
 
+  const existingRow = await env.DB.prepare(
+    "SELECT source FROM users WHERE slug = ?1 LIMIT 1"
+  )
+    .bind(normalizedSlug)
+    .first()
+
   const { links: _ignoredLinks, ...userWithoutLinks } = user
   const now = unixNow()
   const normalizedUser = {
@@ -710,8 +739,14 @@ async function handleAdminUpsertUser(req, env, slug, admin, cors) {
         user_json = excluded.user_json,
         source = excluded.source,
         updated_at = excluded.updated_at`
-  )
-    .bind(normalizedSlug, userId, userJson, `admin:${admin.actor}`, now)
+    )
+    .bind(
+      normalizedSlug,
+      userId,
+      userJson,
+      resolveUpdatedUserSource(existingRow?.source, `admin:${admin.actor}`),
+      now
+    )
     .run()
 
   return jsonResponse({ ok: true, slug: normalizedSlug }, 200, cors)
@@ -739,7 +774,7 @@ async function handleAdminRefreshUserAvatars(env, slug, admin, cors) {
   assertDb(env)
 
   const row = await env.DB.prepare(
-    "SELECT slug, user_id, user_json FROM users WHERE slug = ?1 LIMIT 1"
+    "SELECT slug, user_id, user_json, source FROM users WHERE slug = ?1 LIMIT 1"
   )
     .bind(slug)
     .first()
@@ -765,7 +800,12 @@ async function handleAdminRefreshUserAvatars(env, slug, admin, cors) {
       SET user_json = ?1, source = ?2, updated_at = ?3
       WHERE slug = ?4`
   )
-    .bind(serialized, `admin:${admin.actor}:refresh-avatars`, now, slug)
+    .bind(
+      serialized,
+      resolveUpdatedUserSource(row.source, `admin:${admin.actor}:refresh-avatars`),
+      now,
+      slug
+    )
     .run()
 
   const avatars = resolveUserAvatars(user)
@@ -994,13 +1034,226 @@ function validateAndNormalizeEditSubmission(payload, now) {
 }
 
 function normalizeTargetUserSlug(input) {
-  const normalized = (input || "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "_")
-    .replace(/[^a-z0-9._-]/g, "")
+  const normalized = normalizeSlugValue(input)
   if (!normalized) throw new HttpError(400, "targetUserSlug is invalid")
   return normalized
+}
+
+function getSubmissionApprovedUserSlug(payload) {
+  const approvedUserSlug = typeof payload?.approvedUserSlug === "string"
+    ? payload.approvedUserSlug
+    : ""
+  return normalizeSlugValue(approvedUserSlug)
+}
+
+function withSubmissionApprovedUserSlug(payload, userSlug, now, actor) {
+  const nextPayload = (
+    payload
+    && typeof payload === "object"
+    && !Array.isArray(payload)
+  )
+    ? structuredClone(payload)
+    : {}
+
+  nextPayload.approvedUserSlug = normalizeTargetUserSlug(userSlug)
+  nextPayload.lastApprovedAt = now
+  nextPayload.lastApprovedBy = cleanUrl(actor) || null
+
+  return nextPayload
+}
+
+function preserveSubmissionApprovalMetadata(payload, existingPayload) {
+  const approvedUserSlug = getSubmissionApprovedUserSlug(existingPayload)
+  if (!approvedUserSlug) return payload
+
+  const nextPayload = (
+    payload
+    && typeof payload === "object"
+    && !Array.isArray(payload)
+  )
+    ? structuredClone(payload)
+    : {}
+
+  nextPayload.approvedUserSlug = approvedUserSlug
+
+  const lastApprovedAt = Number(existingPayload?.lastApprovedAt)
+  if (Number.isFinite(lastApprovedAt) && lastApprovedAt > 0) {
+    nextPayload.lastApprovedAt = Math.floor(lastApprovedAt)
+  }
+
+  const lastApprovedBy = cleanUrl(existingPayload?.lastApprovedBy)
+  if (lastApprovedBy) {
+    nextPayload.lastApprovedBy = lastApprovedBy
+  }
+
+  return nextPayload
+}
+
+async function findUserSlugBySource(env, source) {
+  if (!source) return ""
+
+  const row = await env.DB.prepare(
+    "SELECT slug FROM users WHERE source = ?1 LIMIT 1"
+  )
+    .bind(source)
+    .first()
+
+  return normalizeSlugValue(row?.slug)
+}
+
+function normalizeComparableString(value) {
+  return cleanUrl(value).toLowerCase()
+}
+
+function normalizeComparableList(list, normalizeValue) {
+  if (!Array.isArray(list)) return []
+
+  const seen = new Set()
+  const values = []
+  for (const item of list) {
+    const normalized = normalizeValue(item)
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    values.push(normalized)
+  }
+  return values
+}
+
+function buildApplicationSubmissionIdentity(submission) {
+  const payload = safeJsonParse(submission.payload_json)
+  const displayName = cleanUrl(payload?.displayName) || cleanUrl(submission.display_name)
+
+  return {
+    displayName,
+    displayNameKey: normalizeComparableString(displayName),
+    displaySlug: normalizeSlugValue(displayName),
+    discordCurrent: normalizeDiscordUsername(payload?.socials?.discord?.current),
+    redditCurrent: normalizeRedditUsername(payload?.socials?.reddit?.current)
+  }
+}
+
+function scoreLegacyApprovedApplicationUser(row, identity) {
+  const user = safeJsonParse(row?.user_json)
+  if (!user || typeof user !== "object" || Array.isArray(user)) return null
+
+  const discordUsernames = normalizeComparableList(user?.usernames?.discord, normalizeDiscordUsername)
+  const redditUsernames = normalizeComparableList(user?.usernames?.reddit, normalizeRedditUsername)
+
+  const hasDiscordMatch = Boolean(
+    identity.discordCurrent
+    && discordUsernames.includes(identity.discordCurrent)
+  )
+  const hasRedditMatch = Boolean(
+    identity.redditCurrent
+    && redditUsernames.includes(identity.redditCurrent)
+  )
+  const hasDisplayNameMatch = Boolean(
+    identity.displayNameKey
+    && normalizeComparableString(user?.id) === identity.displayNameKey
+  )
+  const hasUserIdMatch = Boolean(
+    identity.displayNameKey
+    && normalizeComparableString(row?.user_id) === identity.displayNameKey
+  )
+  const hasSlugMatch = Boolean(
+    identity.displaySlug
+    && normalizeSlugValue(row?.slug) === identity.displaySlug
+  )
+
+  let strongMatch = false
+  if (identity.discordCurrent && identity.redditCurrent) {
+    strongMatch = hasDiscordMatch && hasRedditMatch
+  } else if (identity.discordCurrent || identity.redditCurrent) {
+    strongMatch = (hasDiscordMatch || hasRedditMatch)
+      && (hasDisplayNameMatch || hasUserIdMatch || hasSlugMatch)
+  } else {
+    strongMatch = hasDisplayNameMatch && (hasUserIdMatch || hasSlugMatch)
+  }
+
+  return {
+    strongMatch,
+    score: (
+      (hasDiscordMatch ? 8 : 0)
+      + (hasRedditMatch ? 8 : 0)
+      + (hasDisplayNameMatch ? 4 : 0)
+      + (hasUserIdMatch ? 3 : 0)
+      + (hasSlugMatch ? 2 : 0)
+    )
+  }
+}
+
+async function findLegacyApprovedApplicationUserSlug(env, submission, options = {}) {
+  const requestedSlug = normalizeSlugValue(options?.requestedSlug)
+  if (requestedSlug) {
+    const requestedRow = await env.DB.prepare(
+      "SELECT slug, user_id, user_json FROM users WHERE slug = ?1 LIMIT 1"
+    )
+      .bind(requestedSlug)
+      .first()
+    if (requestedRow) return normalizeSlugValue(requestedRow.slug)
+  }
+
+  const identity = buildApplicationSubmissionIdentity(submission)
+  if (!identity.displayNameKey && !identity.discordCurrent && !identity.redditCurrent) {
+    return ""
+  }
+
+  if (identity.displaySlug && identity.displaySlug !== requestedSlug) {
+    const displaySlugRow = await env.DB.prepare(
+      "SELECT slug, user_id, user_json FROM users WHERE slug = ?1 LIMIT 1"
+    )
+      .bind(identity.displaySlug)
+      .first()
+    const displaySlugMatch = scoreLegacyApprovedApplicationUser(displaySlugRow, identity)
+    if (displaySlugMatch?.strongMatch) {
+      return normalizeSlugValue(displaySlugRow.slug)
+    }
+  }
+
+  const { results } = await env.DB.prepare(
+    "SELECT slug, user_id, user_json FROM users"
+  ).all()
+
+  const candidates = []
+  for (const row of results || []) {
+    const match = scoreLegacyApprovedApplicationUser(row, identity)
+    if (!match?.strongMatch) continue
+
+    candidates.push({
+      slug: normalizeSlugValue(row.slug),
+      score: match.score
+    })
+  }
+
+  if (candidates.length === 1) return candidates[0].slug
+
+  candidates.sort((a, b) => b.score - a.score || a.slug.localeCompare(b.slug))
+  if (candidates[0] && (!candidates[1] || candidates[0].score > candidates[1].score)) {
+    return candidates[0].slug
+  }
+
+  return ""
+}
+
+async function findLinkedApplicationUserSlug(env, submission, options = {}) {
+  const payload = safeJsonParse(submission.payload_json)
+  const approvedUserSlug = getSubmissionApprovedUserSlug(payload)
+  if (approvedUserSlug) return approvedUserSlug
+
+  const linkedBySource = await findUserSlugBySource(env, `submission:${submission.id}`)
+  if (linkedBySource) return linkedBySource
+
+  const linkedByLegacyData = await findLegacyApprovedApplicationUserSlug(env, submission, options)
+  if (linkedByLegacyData) return linkedByLegacyData
+
+  if (submission.status === "approved") {
+    throw new HttpError(
+      409,
+      "This approved submission could not be linked back to its user automatically. Enter the current slug or edit the user directly instead."
+    )
+  }
+
+  return ""
 }
 
 function normalizeEditChangeValue(value, fieldName) {
@@ -1145,10 +1398,13 @@ async function upsertUserFromEditSubmission(env, submission, now) {
     || targetSlug
 
   const existingRow = await env.DB.prepare(
-    "SELECT user_id, user_json FROM users WHERE slug = ?1 LIMIT 1"
+    "SELECT user_id, user_json, source FROM users WHERE slug = ?1 LIMIT 1"
   )
     .bind(targetSlug)
     .first()
+  if (!existingRow) {
+    throw new HttpError(404, "Target user not found for this edit request")
+  }
   const existingUser = safeJsonParse(existingRow?.user_json)
   const userJson = ensureUserJsonBaseShape(existingUser, targetDisplayName, now)
   const changedFields = Array.isArray(payload.changedFields) ? payload.changedFields : []
@@ -1262,7 +1518,7 @@ async function upsertUserFromEditSubmission(env, submission, now) {
       targetSlug,
       userJson.id,
       JSON.stringify(userJson),
-      `submission:${submission.id}:edit`,
+      resolveUpdatedUserSource(existingRow?.source, `submission:${submission.id}:edit`),
       now
     )
     .run()
@@ -1270,15 +1526,17 @@ async function upsertUserFromEditSubmission(env, submission, now) {
   return targetSlug
 }
 
-async function upsertUserFromSubmission(env, submission, requestedSlug, now) {
+async function upsertUserFromSubmission(env, submission, options, now) {
+  const { requestedSlug = "", fixedSlug = "" } = options || {}
   const payload = safeJsonParse(submission.payload_json)
   if (!payload || typeof payload !== "object") {
     throw new HttpError(500, "Invalid submission payload")
   }
 
   const displayName = payload.displayName || submission.display_name
-  const baseSlug = sanitizeSlug(requestedSlug || displayName || submission.id.slice(0, 8))
-  const uniqueSlug = await findUniqueSlug(env, baseSlug)
+  const normalizedFixedSlug = normalizeSlugValue(fixedSlug)
+  const userSlug = normalizedFixedSlug
+    || await findUniqueSlug(env, sanitizeSlug(requestedSlug || displayName || submission.id.slice(0, 8)))
 
   const discordCurrent = payload?.socials?.discord?.current || null
   const discordOld = Array.isArray(payload?.socials?.discord?.old) ? payload.socials.discord.old : []
@@ -1330,7 +1588,7 @@ async function upsertUserFromSubmission(env, submission, requestedSlug, now) {
         updated_at = excluded.updated_at`
   )
     .bind(
-      uniqueSlug,
+      userSlug,
       displayName,
       JSON.stringify(userJson),
       `submission:${submission.id}`,
@@ -1338,7 +1596,7 @@ async function upsertUserFromSubmission(env, submission, requestedSlug, now) {
     )
     .run()
 
-  return uniqueSlug
+  return userSlug
 }
 
 async function findUniqueSlug(env, baseSlug) {
@@ -1357,12 +1615,28 @@ async function findUniqueSlug(env, baseSlug) {
 }
 
 function sanitizeSlug(input) {
-  const base = (input || "")
+  const base = normalizeSlugValue(input)
+  return base || `user_${crypto.randomUUID().slice(0, 8)}`
+}
+
+function isCanonicalApplicationUserSource(source) {
+  return /^submission:[^:]+$/.test(cleanUrl(source))
+}
+
+function resolveUpdatedUserSource(existingSource, fallbackSource) {
+  const currentSource = cleanUrl(existingSource)
+  if (isCanonicalApplicationUserSource(currentSource)) {
+    return currentSource
+  }
+  return fallbackSource
+}
+
+function normalizeSlugValue(input) {
+  return (input || "")
     .toLowerCase()
     .trim()
     .replace(/\s+/g, "_")
     .replace(/[^a-z0-9._-]/g, "")
-  return base || `user_${crypto.randomUUID().slice(0, 8)}`
 }
 
 async function fetchSubmissionAvatars(env, normalizedSubmission) {
@@ -1758,7 +2032,7 @@ async function assertAdmin(req, env) {
   if (!isActive) throw new HttpError(401, "Unauthorized")
 
   return {
-    actor: "panel-admin",
+    actor: `panel-admin:${sessionId.slice(0, 8)}`,
     method: "session",
     session: payload,
     sessionId
@@ -2044,8 +2318,7 @@ function buildCorsHeaders(req, env, pathname = "") {
   }
 
   if (
-    pathname === "/v1/submissions"
-    || pathname === "/v1/users"
+    pathname === "/v1/users"
     || pathname === "/v1/health"
     || pathname === "/stats"
     || pathname === "/users"

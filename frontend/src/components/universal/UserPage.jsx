@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import TurnstileWidget from "../tools/TurnstileWidget.jsx"
 import { fetchUsersMap } from "../../lib/usersApi.js"
 import { apiUrl } from "../../lib/api.js"
 
@@ -37,6 +38,7 @@ const EDIT_FIELD_DEFINITIONS = [
     { key: "age", label: "Age", type: "age" },
     { key: "birthday", label: "Birthday", type: "text" }
 ]
+const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim()
 
 function normalizeList(list) {
     if (!Array.isArray(list)) return []
@@ -215,6 +217,8 @@ function UserPage() {
         success: "",
         submissionId: ""
     })
+    const [editTurnstileToken, setEditTurnstileToken] = useState("")
+    const [editTurnstileResetSignal, setEditTurnstileResetSignal] = useState(0)
 
     const copyTimerRef = useRef(null)
     const requestIdRef = useRef(0)
@@ -283,6 +287,8 @@ function UserPage() {
         setEditBaseForm(nextForm)
         setEditForm(nextForm)
         setIsEditOpen(false)
+        setEditTurnstileToken("")
+        setEditTurnstileResetSignal(prev => prev + 1)
         setEditSubmitState({
             isSubmitting: false,
             error: "",
@@ -343,8 +349,15 @@ function UserPage() {
         })
     }
 
+    const resetEditTurnstile = () => {
+        if (!TURNSTILE_SITE_KEY) return
+        setEditTurnstileToken("")
+        setEditTurnstileResetSignal(prev => prev + 1)
+    }
+
     const handleToggleEdit = () => {
         setIsEditOpen(prev => !prev)
+        resetEditTurnstile()
         setEditSubmitState(prev => ({
             ...prev,
             error: "",
@@ -377,6 +390,16 @@ function UserPage() {
             return
         }
 
+        if (TURNSTILE_SITE_KEY && !editTurnstileToken) {
+            setEditSubmitState({
+                isSubmitting: false,
+                error: "Please complete the spam check before submitting.",
+                success: "",
+                submissionId: ""
+            })
+            return
+        }
+
         const displayName = cleanText(editForm.displayName) || cleanText(editBaseForm.displayName) || userId
         const activeCommunity = resolveActiveCommunity(
             cleanText(editForm.discordCurrent),
@@ -390,7 +413,8 @@ function UserPage() {
             activeCommunity,
             changedFields: editDiffPreview.changedFields,
             extraDetails: cleanText(editForm.editReason),
-            website: ""
+            website: "",
+            ...(TURNSTILE_SITE_KEY ? { turnstileToken: editTurnstileToken } : {})
         }
 
         setEditSubmitState({
@@ -441,6 +465,8 @@ function UserPage() {
                 success: "",
                 submissionId: ""
             })
+        } finally {
+            resetEditTurnstile()
         }
     }
 
@@ -783,6 +809,18 @@ function UserPage() {
                                         />
                                     </label>
                                 </div>
+
+                                {TURNSTILE_SITE_KEY && (
+                                    <div className="user-edit-turnstile">
+                                        <span>Spam Check *</span>
+                                        <TurnstileWidget
+                                            className="user-edit-turnstile-widget"
+                                            onTokenChange={setEditTurnstileToken}
+                                            resetSignal={editTurnstileResetSignal}
+                                            siteKey={TURNSTILE_SITE_KEY}
+                                        />
+                                    </div>
+                                )}
 
                                 {editSubmitState.error && (
                                     <p className="user-edit-message user-edit-error">{editSubmitState.error}</p>
