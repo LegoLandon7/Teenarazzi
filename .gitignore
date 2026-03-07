@@ -5,7 +5,8 @@
 .idea/
 *.swp
 *.swo
-
+.vite/
+.direnv/
 # Logs
 *.log
 npm-debug.log*
@@ -16,9 +17,12 @@ lerna-debug.log*
 
 # Dependencies / build outputs
 **/node_modules/
+node_modules
 **/dist/
 **/dist-ssr/
 coverage/
+.npm-cache/
+.nix-state/
 
 # Cloudflare / local runtime state
 **/.wrangler/

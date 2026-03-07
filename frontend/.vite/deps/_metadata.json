@@ -1,8 +1,52 @@
 {
-  "hash": "1456b117",
-  "configHash": "8bdd6888",
-  "lockfileHash": "e3b0c442",
-  "browserHash": "2191b6f6",
-  "optimized": {},
-  "chunks": {}
+  "hash": "172bdbf2",
+  "configHash": "5f042ffa",
+  "lockfileHash": "a77bb16c",
+  "browserHash": "3e571a17",
+  "optimized": {
+    "react": {
+      "src": "../../../../../../../nix/store/wqqnycbdw2zzah83r766prhgb2z46825-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "6290b06d",
+      "needsInterop": true
+    },
+    "react-dom": {
+      "src": "../../../../../../../nix/store/wqqnycbdw2zzah83r766prhgb2z46825-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "4e736cd2",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../../../../../../nix/store/wqqnycbdw2zzah83r766prhgb2z46825-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "1f276495",
+      "needsInterop": true
+    },
+    "react/jsx-runtime": {
+      "src": "../../../../../../../nix/store/wqqnycbdw2zzah83r766prhgb2z46825-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react/jsx-runtime.js",
+      "file": "react_jsx-runtime.js",
+      "fileHash": "59fc0fc3",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../../../../../../nix/store/wqqnycbdw2zzah83r766prhgb2z46825-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "9d8fe01e",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../../../../../../nix/store/wqqnycbdw2zzah83r766prhgb2z46825-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "ed96c734",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-BU3CYBMX": {
+      "file": "chunk-BU3CYBMX.js"
+    },
+    "chunk-3OZ7MDMA": {
+      "file": "chunk-3OZ7MDMA.js"
+    }
+  }
 }
