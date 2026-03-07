@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --configLoader runner",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "npm run build && wrangler dev",
+    "dev": "node ./node_modules/vite/bin/vite.js --configLoader runner",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "lint": "node ./node_modules/eslint/bin/eslint.js .",
+    "test": "node ./node_modules/vitest/vitest.mjs run --config ./vitest.config.js",
+    "preview": "npm run build && node ./node_modules/wrangler/bin/wrangler.js dev",
     "predeploy": "npm run build",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && node ./node_modules/wrangler/bin/wrangler.js deploy"
   },
   "dependencies": {
     "react": "^19.2.0",

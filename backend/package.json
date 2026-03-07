@@ -1,0 +1,12 @@
+{
+  "name": "teenarazzi-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node ./node_modules/vitest/vitest.mjs run"
+  },
+  "devDependencies": {
+    "miniflare": "^4.20260214.0",
+    "vitest": "^3.2.4"
+  }
+}

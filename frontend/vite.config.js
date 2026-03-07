@@ -11,5 +11,10 @@ export default defineConfig({
   plugins: enableCloudflareVite ? [react(), cloudflare()] : [react()],
   server: {
     host: true
+  },
+  test: {
+    environment: "happy-dom",
+    setupFiles: "./src/test/setup.js",
+    globals: true
   }
 })

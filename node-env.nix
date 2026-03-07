@@ -207,17 +207,10 @@ let
 
   # Extract the Node.js source code which is used to compile packages with
   # native bindings
-  nodeSources =
-    if nodejs ? src then
-      runCommand "node-sources" {} ''
-        tar --no-same-owner --no-same-permissions -xf ${nodejs.src}
-        mv node-* $out
-      ''
-    else
-      runCommand "node-sources" {} ''
-        mkdir -p "$out/include"
-        cp -r ${nodejs}/include/node "$out/include/node"
-      '';
+  nodeSources = runCommand "node-sources" {} ''
+    tar --no-same-owner --no-same-permissions -xf ${nodejs.src}
+    mv node-* $out
+  '';
 
   # Script that adds _integrity fields to all package.json files to prevent NPM from consulting the cache (that is empty)
   addIntegrityFieldsScript = writeTextFile {
@@ -465,12 +458,7 @@ let
           node ${addIntegrityFieldsScript}
         ''}
 
-        if [ "''${NODE2NIX_SKIP_REBUILD-}" != "1" ]
-        then
-            npm ${forceOfflineFlag} --nodedir=${nodeSources} ${npmFlags} ${lib.optionalString production "--production"} rebuild
-        else
-            echo "Skipping npm rebuild because NODE2NIX_SKIP_REBUILD=1"
-        fi
+        npm ${forceOfflineFlag} --nodedir=${nodeSources} ${npmFlags} ${lib.optionalString production "--production"} rebuild
 
         runHook postRebuild
 
