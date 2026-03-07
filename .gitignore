@@ -40,3 +40,4 @@ coverage/
 *.pem
 *.key
 *.p12
+.envrc
