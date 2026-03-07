@@ -1,8 +1,52 @@
 {
-  "hash": "1456b117",
-  "configHash": "8bdd6888",
-  "lockfileHash": "e3b0c442",
-  "browserHash": "2191b6f6",
-  "optimized": {},
-  "chunks": {}
+  "hash": "1cba6ee1",
+  "configHash": "40d80ba4",
+  "lockfileHash": "a77bb16c",
+  "browserHash": "420e1d7c",
+  "optimized": {
+    "react": {
+      "src": "../../../../../../../nix/store/5f4f2xjrk28mlh2fla7ylp2vlwl7djjv-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "ded286eb",
+      "needsInterop": true
+    },
+    "react-dom": {
+      "src": "../../../../../../../nix/store/5f4f2xjrk28mlh2fla7ylp2vlwl7djjv-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "89e24580",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../../../../../../nix/store/5f4f2xjrk28mlh2fla7ylp2vlwl7djjv-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "8b5680a2",
+      "needsInterop": true
+    },
+    "react/jsx-runtime": {
+      "src": "../../../../../../../nix/store/5f4f2xjrk28mlh2fla7ylp2vlwl7djjv-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react/jsx-runtime.js",
+      "file": "react_jsx-runtime.js",
+      "fileHash": "f2b1b682",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../../../../../../nix/store/5f4f2xjrk28mlh2fla7ylp2vlwl7djjv-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "80ee5469",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../../../../../../nix/store/5f4f2xjrk28mlh2fla7ylp2vlwl7djjv-node-dependencies-teenarazzi-0.0.0/lib/node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "61b358ec",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-LGMHCOYQ": {
+      "file": "chunk-LGMHCOYQ.js"
+    },
+    "chunk-2VKL5GVD": {
+      "file": "chunk-2VKL5GVD.js"
+    }
+  }
 }
